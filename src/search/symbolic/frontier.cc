@@ -4,6 +4,8 @@
 
 #include "../utils/timer.h"
 
+#include "cost.h"
+
 using namespace std;
 
 namespace symbolic {
@@ -13,10 +15,10 @@ Frontier::Frontier() : mgr(nullptr), g_value(0) {
 void Frontier::init(SymStateSpaceManager *mgr_, const BDD &bdd) {
     mgr = mgr_;
     Sfilter.push_back(bdd);
-    g_value = 0;
+    g_value = Cost::MIN;
 }
 
-void Frontier::set(int g, Bucket &bdd) {
+void Frontier::set(Cost g, Bucket &bdd) {
     assert(empty());
     g_value = g;
     Sfilter.swap(bdd);
@@ -108,8 +110,8 @@ ResultExpansion Frontier::expand_zero(int maxTime, int maxNodes, bool fw) {
     // Compute image, storing the result on Simg
     try {
         for (size_t i = 0; i < Szero.size(); i++) {
-            Simg.push_back(map<int, Bucket>());
-            mgr->zero_image(fw, Szero[i], Simg[i][0], maxNodes);
+            Simg.push_back(map<Cost, Bucket>());
+            mgr->zero_image(fw, Szero[i], Simg[i][Cost::MIN], maxNodes);
         }
         mgr->unset_time_limit();
     } catch (const BDDError &e) {
@@ -128,7 +130,7 @@ ResultExpansion Frontier::expand_cost(int maxTime, int maxNodes, bool fw) {
     // cout << maxTime << " + " << maxNodes << endl;
     try {
         for (size_t i = 0; i < S.size(); i++) {
-            Simg.push_back(map<int, Bucket>());
+            Simg.push_back(map<Cost, Bucket>());
             mgr->cost_image(fw, S[i], Simg[i], maxNodes);
         }
         mgr->unset_time_limit();

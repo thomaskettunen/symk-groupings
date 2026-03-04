@@ -2,6 +2,8 @@
 
 #include "../searches/uniform_cost_search.h"
 
+#include "../cost.h"
+
 using namespace std;
 
 namespace symbolic {
@@ -15,11 +17,11 @@ void SymSolutionRegistry::reconstruct_plans(
     assert(queue.empty());
 
     for (const SymSolutionCut &sym_cut : sym_cuts) {
-        assert(fw_closed || sym_cut.get_g() == 0);
-        assert(bw_closed || sym_cut.get_h() == 0);
+        assert(fw_closed || sym_cut.get_g() == Cost::MIN);
+        assert(bw_closed || sym_cut.get_h() == Cost::MIN);
 
         ReconstructionNode cur_node(
-            sym_cut.get_g(), sym_cut.get_h(), numeric_limits<int>::max(),
+            sym_cut.get_g(), sym_cut.get_h(), std::numeric_limits<int>::max(),
             sym_cut.get_cut(), sym_vars->zeroBDD(), fw_closed != nullptr, 0);
         queue.push(cur_node);
 
@@ -96,7 +98,7 @@ void SymSolutionRegistry::reconstruct_plans(
 
 void SymSolutionRegistry::expand_actions(const ReconstructionNode &node) {
     bool fwd = node.is_fwd_phase();
-    int cur_cost;
+    Cost cur_cost;
     shared_ptr<ClosedList> cur_closed_list;
 
     if (fwd) {
@@ -112,11 +114,11 @@ void SymSolutionRegistry::expand_actions(const ReconstructionNode &node) {
     const auto &trs =
         sym_transition_relations->get_individual_transition_relations();
     for (auto it = trs.rbegin(); it != trs.rend(); ++it) {
-        int op_cost = it->first;
-        int new_cost = cur_cost - op_cost;
+        Cost op_cost = it->first;
+        Cost new_cost = cur_cost - op_cost;
 
         // new cost can not be negative
-        if (new_cost < 0) {
+        if (new_cost < Cost::MIN) {
             continue;
         }
 
@@ -127,7 +129,7 @@ void SymSolutionRegistry::expand_actions(const ReconstructionNode &node) {
 
             BDD intersection = succ * closed_states;
             int layer_id = 0;
-            if (op_cost == 0)
+            if (op_cost == Cost::MIN)
                 layer_id =
                     cur_closed_list->get_zero_cut(new_cost, intersection);
 
@@ -141,7 +143,7 @@ void SymSolutionRegistry::expand_actions(const ReconstructionNode &node) {
             }
 
             ReconstructionNode new_node(
-                -1, -1, layer_id, intersection, node.get_visitied_states(), fwd,
+                Cost::INVALID, Cost::INVALID, layer_id, intersection, node.get_visitied_states(), fwd,
                 node.get_plan_length() + 1);
             if (fwd) {
                 new_node.set_g(new_cost);
@@ -163,7 +165,7 @@ void SymSolutionRegistry::expand_actions(const ReconstructionNode &node) {
                 BDD middle_state =
                     new_node.get_middle_state(fw_closed->get_start_states());
                 ReconstructionNode bw_node(
-                    0, new_node.get_h(), numeric_limits<int>::max(),
+                    Cost::MIN, new_node.get_h(), 0,
                     middle_state, new_node.get_visitied_states(), false,
                     node.get_plan_length() + 1);
                 bw_node.set_predecessor(
@@ -195,12 +197,12 @@ void SymSolutionRegistry::expand_actions(const ReconstructionNode &node) {
 
 bool SymSolutionRegistry::swap_to_bwd_phase(
     const ReconstructionNode &node) const {
-    return bw_closed && node.is_fwd_phase() && node.get_g() == 0 &&
+    return bw_closed && node.is_fwd_phase() && node.get_g() == Cost::MIN &&
            !(node.get_states() * fw_closed->get_start_states()).IsZero();
 }
 
 bool SymSolutionRegistry::is_solution(const ReconstructionNode &node) const {
-    if (node.get_f() > 0)
+    if (node.get_f() > Cost::MIN)
         return false;
     if (bw_closed && node.is_fwd_phase())
         return false;
@@ -247,7 +249,7 @@ void SymSolutionRegistry::init(
 void SymSolutionRegistry::register_solution(const SymSolutionCut &solution) {
     if (single_solution()) {
         if (!sym_cuts.empty()) {
-            sym_cuts = map<int, vector<SymSolutionCut>>();
+            sym_cuts = map<Cost, vector<SymSolutionCut>>();
         }
         sym_cuts[solution.get_f()].push_back(solution);
         return;
@@ -269,9 +271,9 @@ void SymSolutionRegistry::register_solution(const SymSolutionCut &solution) {
     }
 }
 
-void SymSolutionRegistry::construct_cheaper_solutions(int bound) {
+void SymSolutionRegistry::construct_cheaper_solutions(Cost bound) {
     for (const auto &key : sym_cuts) {
-        int plan_cost = key.first;
+        Cost plan_cost = key.first;
         const vector<SymSolutionCut> &cuts = key.second;
         if (plan_cost >= bound || found_all_plans())
             break;

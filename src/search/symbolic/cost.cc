@@ -18,11 +18,13 @@ namespace symbolic {
     const Cost Cost::ONE = Cost(1);
     const Cost Cost::MAX = Cost(std::numeric_limits<int>::max());
     const Cost Cost::INFTY = Cost(std::numeric_limits<int>::max());
-
+    
+    
     Cost &Cost::operator+=(const Cost &other) { this->value += other.value; return *this; }
     Cost &Cost::operator-=(const Cost &other) { this->value -= other.value; return *this; }
     Cost Cost::operator+(const Cost other) const { return Cost(this->value + other.value); }
     Cost Cost::operator-(const Cost other) const { return Cost(this->value - other.value); }
+    Cost Cost::operator*(const double other) const { return Cost(this->value * other); }
     bool Cost::operator>=(const Cost &other) const { return this->value >= other.value; }
     bool Cost::operator<=(const Cost &other) const { return this->value <= other.value; }
     bool Cost::operator>(const Cost &other) const { return this->value > other.value; }

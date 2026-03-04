@@ -7,26 +7,28 @@
 
 #include <vector>
 
+#include "../cost.h"
+
 namespace symbolic {
 class SymSolutionCut {
 protected:
-    int g;
-    int h;
+    Cost g;
+    Cost h;
     BDD cut;
 
 public:
     SymSolutionCut(); // dummy for no solution
-    SymSolutionCut(int g, int h, BDD cut);
+    SymSolutionCut(Cost g, Cost h, BDD cut);
 
-    int get_g() const;
-    int get_h() const;
-    int get_f() const;
+    Cost get_g() const;
+    Cost get_h() const;
+    Cost get_f() const;
     BDD get_cut() const;
 
     void merge(const SymSolutionCut &other);
 
-    void set_g(int g);
-    void set_h(int h);
+    void set_g(Cost g);
+    void set_h(Cost h);
     void set_cut(BDD cut);
 
     // Here we only compare g and h values!!!

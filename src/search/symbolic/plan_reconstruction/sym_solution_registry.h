@@ -15,6 +15,8 @@
 
 #include <queue>
 
+#include "../cost.h"
+
 namespace symbolic {
 // We would like to use the prio queue implemented in FD but it requires
 // integer values as prio and we have a more complex comparision
@@ -42,7 +44,7 @@ protected:
     bool single_solution_pruning;
     bool simple_solutions_pruning;
 
-    std::map<int, std::vector<SymSolutionCut>> sym_cuts;
+    std::map<Cost, std::vector<SymSolutionCut>> sym_cuts;
 
     std::shared_ptr<SymVariables> sym_vars;
     std::shared_ptr<ClosedList> fw_closed;
@@ -101,7 +103,7 @@ public:
     virtual ~SymSolutionRegistry() = default;
 
     void register_solution(const SymSolutionCut &solution);
-    void construct_cheaper_solutions(int bound);
+    void construct_cheaper_solutions(Cost bound);
 
     bool found_all_plans() const {
         return plan_data_base && plan_data_base->found_enough_plans();
@@ -118,14 +120,14 @@ public:
         return plan_data_base->get_states_accepted_goal_path();
     }
 
-    double cheapest_solution_cost_found() const {
-        double cheapest = std::numeric_limits<double>::infinity();
+    Cost cheapest_solution_cost_found() const {
+        Cost cheapest = Cost::INFTY;
         if (plan_data_base) {
             cheapest =
-                std::min(cheapest, plan_data_base->get_first_plan_cost());
+                Cost::min(cheapest, plan_data_base->get_first_plan_cost());
         }
         if (sym_cuts.size() > 0) {
-            cheapest = std::min(cheapest, (double)sym_cuts.begin()->first);
+            cheapest = Cost::min(cheapest, sym_cuts.begin()->first);
         }
         return cheapest;
     }

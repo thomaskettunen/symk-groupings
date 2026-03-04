@@ -5,6 +5,8 @@
 
 #include "../../task_utils/task_properties.h"
 
+#include "../cost.h"
+
 using namespace std;
 
 namespace symbolic {
@@ -18,7 +20,7 @@ public:
         std::shared_ptr<SymVariables> sym_vars,
         const std::shared_ptr<AbstractTask> &task, PlanManager &plan_manager);
 
-    virtual bool reconstruct_solutions(int cost) const override;
+    virtual bool reconstruct_solutions(Cost cost) const override;
     virtual void add_plan(const Plan &plan) override;
 
     std::string tag() const override {
@@ -26,7 +28,7 @@ public:
     }
 
 protected:
-    int most_expensive_plan_cost;
+    Cost most_expensive_plan_cost;
 };
 }
 

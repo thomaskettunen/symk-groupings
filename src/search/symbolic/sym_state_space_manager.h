@@ -18,6 +18,8 @@
 #include <set>
 #include <vector>
 
+#include "cost.h"
+
 namespace extra_tasks {
 class SdacTask;
 }
@@ -41,10 +43,10 @@ protected:
     // exceeded.
     void zero_preimage(BDD bdd, std::vector<BDD> &res, int max_nodes) const;
     void cost_preimage(
-        BDD bdd, std::map<int, std::vector<BDD>> &res, int max_nodes) const;
+        BDD bdd, std::map<Cost, std::vector<BDD>> &res, int max_nodes) const;
     void zero_image(BDD bdd, std::vector<BDD> &res, int maxn_nodes) const;
     void cost_image(
-        BDD bdd, std::map<int, std::vector<BDD>> &res, int max_nodes) const;
+        BDD bdd, std::map<Cost, std::vector<BDD>> &res, int max_nodes) const;
 
 public:
     SymStateSpaceManager(
@@ -96,7 +98,7 @@ public:
         return sym_transition_relations.has_zero_cost_transition();
     }
 
-    int get_min_transition_cost() const {
+    Cost get_min_transition_cost() const {
         return sym_transition_relations.get_min_transition_cost();
     }
 
@@ -109,7 +111,7 @@ public:
     }
 
     void cost_image(
-        bool fw, BDD bdd, std::map<int, std::vector<BDD>> &res, int max_nodes) {
+        bool fw, BDD bdd, std::map<Cost, std::vector<BDD>> &res, int max_nodes) {
         if (fw) {
             cost_image(bdd, res, max_nodes);
         } else {

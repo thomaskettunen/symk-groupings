@@ -11,6 +11,8 @@
 
 #include <algorithm>
 
+#include "cost.h"
+
 namespace extra_tasks {
 class SdacTask;
 }
@@ -20,16 +22,16 @@ class SymTransitionRelations {
     SymVariables *sym_vars;
     const SymParameters &sym_params;
 
-    std::map<int, std::vector<ConjunctiveTransitionRelation>>
+    std::map<Cost, std::vector<ConjunctiveTransitionRelation>>
         individual_conj_transitions;
-    std::map<int, std::vector<DisjunctiveTransitionRelation>>
+    std::map<Cost, std::vector<DisjunctiveTransitionRelation>>
         individual_disj_transitions;
-    std::map<int, std::vector<TransitionRelationPtr>> individual_transitions;
+    std::map<Cost, std::vector<TransitionRelationPtr>> individual_transitions;
 
-    std::map<int, std::vector<DisjunctiveTransitionRelation>>
+    std::map<Cost, std::vector<DisjunctiveTransitionRelation>>
         disj_transitions; // Merged TRs
-    std::map<int, std::vector<TransitionRelationPtr>> transitions; // Merged TRs
-    int min_transition_cost; // minimum cost of non-zero cost transitions
+    std::map<Cost, std::vector<TransitionRelationPtr>> transitions; // Merged TRs
+    Cost min_transition_cost; // minimum cost of non-zero cost transitions
 
     void init_individual_transitions(
         const std::shared_ptr<AbstractTask> &task,
@@ -41,7 +43,7 @@ class SymTransitionRelations {
     void move_monolithic_conj_transitions();
 
     template<class T>
-    int get_size(std::map<int, std::vector<T>> transitions) const;
+    int get_size(std::map<Cost, std::vector<T>> transitions) const;
 
 public:
     SymTransitionRelations(
@@ -50,13 +52,13 @@ public:
         const std::shared_ptr<AbstractTask> &task,
         const SymMutexes &sym_mutexes);
 
-    int get_min_transition_cost() const;
+    Cost get_min_transition_cost() const;
     bool has_zero_cost_transition() const;
     bool has_unit_cost() const;
 
-    const std::map<int, std::vector<TransitionRelationPtr>> &
+    const std::map<Cost, std::vector<TransitionRelationPtr>> &
     get_transition_relations() const;
-    const std::map<int, std::vector<TransitionRelationPtr>> &
+    const std::map<Cost, std::vector<TransitionRelationPtr>> &
     get_individual_transition_relations() const;
 };
 }

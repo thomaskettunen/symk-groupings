@@ -4,6 +4,8 @@
 
 #include "../search_algorithms/symbolic_search.h"
 
+#include "../cost.h"
+
 namespace symbolic {
 bool TopkUniformCostSearch::provable_no_more_plans() {
     // If we will expand states with new costs
@@ -13,7 +15,7 @@ bool TopkUniformCostSearch::provable_no_more_plans() {
     // search dir. Thus we consider all smaller
     if (getG() > last_g_cost) {
         BDD no_goal_path_states = !engine->get_states_on_goal_paths();
-        no_goal_path_states *= closed->getPartialClosed(last_g_cost - 1);
+        no_goal_path_states *= closed->getPartialClosed(last_g_cost - Cost::ONE); // TODO: P10: BAD BAD BAD BAD FIX NOT ONE BAD PLEASE FIX PLEASE I BEG OF YOU
         if (!open_list.contains_any_state(!no_goal_path_states)) {
             return true; // Search finished
         }
@@ -23,7 +25,7 @@ bool TopkUniformCostSearch::provable_no_more_plans() {
     return open_list.empty();
 }
 
-void TopkUniformCostSearch::checkFrontierCut(Bucket &bucket, int g) {
+void TopkUniformCostSearch::checkFrontierCut(Bucket &bucket, Cost g) {
     for (BDD &bucketBDD : bucket) {
         auto all_sols =
             perfectHeuristic->getAllCuts(bucketBDD, g, fw, engine->getMinG());

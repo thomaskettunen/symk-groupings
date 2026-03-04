@@ -8,6 +8,8 @@
 
 #include <memory>
 
+#include "../cost.h"
+
 using Plan = std::vector<OperatorID>;
 
 namespace symbolic {
@@ -15,8 +17,8 @@ class SymSolutionCut;
 
 class ReconstructionNode {
 protected:
-    int g; // cost left for fwd reconstruction (towards initial state)
-    int h; // cost left for bwd reconstruction (towards goal state)
+    Cost g; // cost left for fwd reconstruction (towards initial state)
+    Cost h; // cost left for bwd reconstruction (towards goal state)
     int zero_layer; // current layer of zero cost BDD
     BDD states; // relevant states
     BDD visited_states; // states visited (relevant for simple plans)
@@ -31,16 +33,16 @@ protected:
 public:
     ReconstructionNode() = delete;
     ReconstructionNode(
-        int g, int h, int zero_layer, BDD states, BDD visited_staes,
+        Cost g, Cost h, int zero_layer, BDD states, BDD visited_staes,
         bool fwd_reconstruction, int plan_length);
 
-    int get_g() const {
+    Cost get_g() const {
         return g;
     }
-    int get_h() const {
+    Cost get_h() const {
         return h;
     }
-    int get_f() const {
+    Cost get_f() const {
         return get_g() + get_h();
     }
     int get_zero_layer() const {
@@ -64,10 +66,10 @@ public:
     std::shared_ptr<ReconstructionNode> get_origin_predecessor() const;
     std::shared_ptr<ReconstructionNode> get_origin_successor() const;
 
-    void set_g(int g) {
+    void set_g(Cost g) {
         this->g = g;
     }
-    void set_h(int h) {
+    void set_h(Cost h) {
         this->h = h;
     }
     void set_zero_layer(int zero_layer) {

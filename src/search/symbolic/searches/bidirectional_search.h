@@ -30,11 +30,11 @@ public:
 
     virtual void stepImage(int maxTime, int maxNodes) override;
 
-    virtual int getF() const override {
-        return std::max<int>(
-            std::max<int>(fw->getF(), bw->getF()),
+    virtual Cost getF() const override {
+        return Cost::max(
+            Cost::max(fw->getF(), bw->getF()),
             fw->getG() + bw->getG() +
-                std::min(1, mgr->get_min_transition_cost()));
+                Cost::min(Cost::ONE, mgr->get_min_transition_cost())); // TODO: P10: Why one?
     }
 
     bool isExpFor(BidirectionalSearch *bdExp) const;

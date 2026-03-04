@@ -13,6 +13,8 @@
 #include <sstream>
 #include <string>
 
+#include "../cost.h"
+
 using namespace std;
 
 namespace symbolic {
@@ -31,14 +33,14 @@ bool UniformCostSearch::init(
     mgr = manager;
     fw = forward;
     lastStepCost = true;
-    last_g_cost = 0;
+    last_g_cost = Cost::MIN;
     assert(mgr);
 
     BDD init_bdd = fw ? mgr->get_initial_state() : mgr->get_goal();
     frontier.init(manager.get(), init_bdd);
 
     closed->init(mgr.get());
-    closed->insert(0, init_bdd);
+    closed->insert(Cost::MIN, init_bdd);
 
     if (opposite_search) {
         perfectHeuristic = opposite_search->getClosedShared();
@@ -46,9 +48,9 @@ bool UniformCostSearch::init(
         perfectHeuristic = make_shared<ClosedList>();
         perfectHeuristic->init(mgr.get());
         if (fw) {
-            perfectHeuristic->insert(0, mgr->get_goal());
+            perfectHeuristic->insert(Cost::MIN, mgr->get_goal());
         } else {
-            perfectHeuristic->insert(0, mgr->get_initial_state());
+            perfectHeuristic->insert(Cost::MIN, mgr->get_initial_state());
         }
     }
 
@@ -60,14 +62,14 @@ bool UniformCostSearch::init(
     return true;
 }
 
-void UniformCostSearch::checkFrontierCut(Bucket &bucket, int g) {
+void UniformCostSearch::checkFrontierCut(Bucket &bucket, Cost g) {
     if (sym_params.non_stop) {
         return;
     }
 
     for (BDD &bucketBDD : bucket) {
         auto sol = perfectHeuristic->getCheapestCut(bucketBDD, g, fw);
-        if (sol.get_f() >= 0) {
+        if (sol.get_f() >= Cost::MIN) {
             engine->new_solution(sol);
         }
         // Prune everything closed in opposite direction
@@ -82,18 +84,18 @@ bool UniformCostSearch::provable_no_more_plans() {
 bool UniformCostSearch::prepareBucket() {
     if (!frontier.bucketReady()) {
         if (provable_no_more_plans()) {
-            engine->setLowerBound(numeric_limits<int>::max());
+            engine->setLowerBound(Cost::MAX);
             return true;
         }
         open_list.pop(frontier);
         last_g_cost = frontier.g();
-        assert(!frontier.empty() || frontier.g() == numeric_limits<int>::max());
+        assert(!frontier.empty() || frontier.g() == Cost::MAX);
         checkFrontierCut(frontier.bucket(), frontier.g());
 
         filterFrontier();
 
         // Close and move to reopen
-        if (!lastStepCost || frontier.g() != 0) {
+        if (!lastStepCost || frontier.g() != Cost::MIN) {
             // Avoid closing init twice
             for (const BDD &states : frontier.bucket()) {
                 closed->insert(frontier.g(), states);
@@ -147,7 +149,7 @@ void UniformCostSearch::stepImage(int maxTime, int maxNodes) {
         // and reopen. Include new states in the open list
         for (auto &resImage : res_expansion.buckets) {
             for (auto &pairCostBDDs : resImage) {
-                int cost = frontier.g() + pairCostBDDs.first;
+                Cost cost = frontier.g() + pairCostBDDs.first;
                 mgr->merge_bucket(pairCostBDDs.second);
 
                 checkFrontierCut(pairCostBDDs.second, cost);

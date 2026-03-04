@@ -6,7 +6,7 @@
 namespace symbolic {
 class TopqSymbolicUniformCostSearch : public TopkSymbolicUniformCostSearch {
 private:
-    double get_quality_bound() {
+    Cost get_quality_bound() {
         return solution_registry->cheapest_solution_cost_found() *
                quality_multiplier;
     }

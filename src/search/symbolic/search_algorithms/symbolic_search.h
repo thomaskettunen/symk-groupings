@@ -12,6 +12,8 @@
 #include <memory>
 #include <vector>
 
+#include "../cost.h"
+
 namespace options {
 class Options;
 }
@@ -43,9 +45,9 @@ protected:
 
     int step_num;
     bool lower_bound_increased;
-    int lower_bound; // Lower bound of search (incl. min-action costs)
-    int upper_bound; // Upper bound of search (not use by top_k)
-    int min_g; // min g costs of open lists
+    Cost lower_bound; // Lower bound of search (incl. min-action costs)
+    Cost upper_bound; // Upper bound of search (not use by top_k)
+    Cost min_g; // min g costs of open lists
 
     std::shared_ptr<PlanSelector> plan_data_base;
     std::shared_ptr<SymSolutionRegistry> solution_registry; // Solution registry
@@ -61,21 +63,21 @@ public:
     SymbolicSearch(const plugins::Options &opts);
     virtual ~SymbolicSearch() = default;
 
-    virtual void setLowerBound(int lower);
+    virtual void setLowerBound(Cost lower);
 
-    virtual void setMinG(int g) {
-        min_g = std::max(g, min_g);
+    virtual void setMinG(Cost g) {
+        min_g = Cost::max(g, min_g);
     }
 
     virtual bool solved() const {
         return lower_bound >= upper_bound;
     }
 
-    virtual int getLowerBound() const {
+    virtual Cost getLowerBound() const {
         return lower_bound;
     }
 
-    virtual int getMinG() const {
+    virtual Cost getMinG() const {
         return min_g;
     }
 

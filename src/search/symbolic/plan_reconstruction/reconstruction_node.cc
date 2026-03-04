@@ -6,7 +6,7 @@ using namespace std;
 
 namespace symbolic {
 ReconstructionNode::ReconstructionNode(
-    int g, int h, int zero_layer, BDD states, BDD visited_states,
+    Cost g, Cost h, int zero_layer, BDD states, BDD visited_states,
     bool fwd_phase, int plan_length)
     : g(g),
       h(h),

@@ -4,6 +4,8 @@
 #include "../../state_registry.h"
 #include "../../task_utils/task_properties.h"
 
+#include "../cost.h"
+
 using namespace std;
 
 namespace symbolic {
@@ -25,7 +27,7 @@ PlanSelector::PlanSelector(const plugins::Options &opts)
       num_accepted_plans(0),
       num_rejected_plans(0),
       plan_mgr_task_proxy(*tasks::g_root_task),
-      first_accepted_plan_cost(numeric_limits<double>::infinity()) {
+      first_accepted_plan_cost(Cost::INFTY) {
 }
 
 void PlanSelector::init(
@@ -130,7 +132,7 @@ void PlanSelector::save_accepted_plan(const Plan &plan) {
     if (num_accepted_plans == 0) {
         first_accepted_plan = plan;
         first_accepted_plan_cost =
-            calculate_plan_cost(plan, state_registry->get_task_proxy());
+            Cost(calculate_plan_cost(plan, state_registry->get_task_proxy())); // TODO: P10: Not here either
 
         if (!write_plans) {
             plan_mgr.save_plan(

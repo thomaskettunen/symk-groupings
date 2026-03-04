@@ -36,6 +36,7 @@ namespace symbolic {
         Cost &operator-=(const Cost &other);
         Cost operator+(const Cost other) const;
         Cost operator-(const Cost other) const;
+        Cost operator*(const double other) const;
         bool operator>=(const Cost &other) const;
         bool operator<=(const Cost &other) const;
         bool operator>(const Cost &other) const;

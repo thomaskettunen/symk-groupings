@@ -6,12 +6,14 @@
 #include <iostream>
 #include <stdio.h>
 
+#include "../cost.h"
+
 using namespace std;
 
 namespace symbolic {
 IterativeCostSelector::IterativeCostSelector(const plugins::Options &opts)
     : PlanSelector(opts),
-      most_expensive_plan_cost(opts.get<int>("plan_cost_bound")) {
+      most_expensive_plan_cost(Cost(opts.get<int>("plan_cost_bound"))) { // TODO: P10: Not here, but where?
     PlanSelector::anytime_completness = false;
 }
 
@@ -23,7 +25,7 @@ void IterativeCostSelector::init(
     cout << endl;
 }
 
-bool IterativeCostSelector::reconstruct_solutions(int cost) const {
+bool IterativeCostSelector::reconstruct_solutions(Cost cost) const {
     if (most_expensive_plan_cost >= cost) {
         return false;
     }
@@ -31,8 +33,8 @@ bool IterativeCostSelector::reconstruct_solutions(int cost) const {
 }
 
 void IterativeCostSelector::add_plan(const Plan &plan) {
-    int cur_plan_cost =
-        calculate_plan_cost(plan, state_registry->get_task_proxy());
+    Cost cur_plan_cost =
+        Cost(calculate_plan_cost(plan, state_registry->get_task_proxy())); // TODO: P10: No
 
     if (cur_plan_cost > most_expensive_plan_cost) {
         if (!has_accepted_plan(plan)) {

@@ -8,6 +8,8 @@
 #include <cassert>
 #include <map>
 
+#include "cost.h"
+
 namespace symbolic {
 class SymStateSpaceManager;
 
@@ -27,9 +29,9 @@ public:
 class ResultExpansion : public Result {
 public:
     bool step_zero;
-    std::vector<std::map<int, Bucket>> buckets;
+    std::vector<std::map<Cost, Bucket>> buckets;
     ResultExpansion(
-        bool step_zero_, std::vector<std::map<int, Bucket>> &buckets_, double t)
+        bool step_zero_, std::vector<std::map<Cost, Bucket>> &buckets_, double t)
         : Result(t), step_zero(step_zero_) {
         buckets.swap(buckets_);
     }
@@ -51,9 +53,9 @@ class Frontier { // Current states extracted from the open list
     // bucket to store temporary image results in expand_zero() and
     // expand_cost() For each BDD in Szero or S, stores a map with pairs <cost,
     // resImage>
-    std::vector<std::map<int, Bucket>> Simg;
+    std::vector<std::map<Cost, Bucket>> Simg;
 
-    int g_value;
+    Cost g_value;
 
     ResultExpansion expand_zero(int maxTime, int maxNodes, bool fw);
     ResultExpansion expand_cost(int maxTime, int maxNodes, bool fw);
@@ -62,7 +64,7 @@ public:
     Frontier();
 
     void init(SymStateSpaceManager *mgr, const BDD &bdd);
-    void set(int g, Bucket &open);
+    void set(Cost g, Bucket &open);
 
     Result prepare(int maxTime, int maxNodes, bool fw, bool initialization);
 
@@ -74,7 +76,7 @@ public:
     int nodes() const;
     int buckets() const;
 
-    int g() const {
+    Cost g() const {
         return g_value;
     }
 

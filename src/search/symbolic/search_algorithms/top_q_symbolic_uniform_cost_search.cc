@@ -17,13 +17,13 @@ void TopqSymbolicUniformCostSearch::new_solution(const SymSolutionCut &sol) {
     if (!(solution_registry->found_all_plans() ||
           lower_bound > get_quality_bound())) {
         solution_registry->register_solution(sol);
-        if (get_quality_bound() < numeric_limits<double>::infinity()) {
+        if (get_quality_bound() < Cost::INFTY) {
             // utils::g_log << "Quality bound: " << get_quality_bound() << endl;
-            upper_bound = static_cast<int>(
-                min((double)upper_bound, get_quality_bound() + 1));
+            upper_bound = 
+                Cost::min(upper_bound, get_quality_bound() + Cost::ONE); // TODO: P10: BAD ONE
         }
     } else {
-        lower_bound = numeric_limits<int>::max();
+        lower_bound = Cost::MAX;
     }
 }
 
@@ -33,7 +33,7 @@ SearchStatus TopqSymbolicUniformCostSearch::step() {
     if (step_num == 0) {
         BDD cut = mgr->get_initial_state() * mgr->get_goal();
         if (!cut.IsZero()) {
-            new_solution(SymSolutionCut(0, 0, cut));
+            new_solution(SymSolutionCut(Cost::MIN, Cost::MIN, cut));
         }
     }
 

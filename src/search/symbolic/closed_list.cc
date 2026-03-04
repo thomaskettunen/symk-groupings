@@ -11,6 +11,8 @@
 #include <sstream>
 #include <string>
 
+#include "cost.h"
+
 using namespace std;
 
 namespace symbolic {
@@ -19,22 +21,22 @@ ClosedList::ClosedList() : mgr(nullptr) {
 
 void ClosedList::init(SymStateSpaceManager *manager) {
     mgr = manager;
-    map<int, vector<BDD>>().swap(zeroCostClosed);
-    map<int, BDD>().swap(closed);
+    map<Cost, vector<BDD>>().swap(zeroCostClosed);
+    map<Cost, BDD>().swap(closed);
     closedTotal = mgr->zeroBDD();
 }
 
 void ClosedList::init(SymStateSpaceManager *manager, const ClosedList &other) {
     mgr = manager;
-    map<int, vector<BDD>>().swap(zeroCostClosed);
-    map<int, BDD>().swap(closed);
+    map<Cost, vector<BDD>>().swap(zeroCostClosed);
+    map<Cost, BDD>().swap(closed);
     closedTotal = mgr->zeroBDD();
 
     closedTotal = other.closedTotal;
-    closed[0] = closedTotal;
+    closed[Cost::MIN] = closedTotal;
 }
 
-void ClosedList::insert(int h, BDD S) {
+void ClosedList::insert(Cost h, BDD S) {
     if (closed.count(h)) {
         closed[h] += S;
     } else {
@@ -47,7 +49,7 @@ void ClosedList::insert(int h, BDD S) {
     closedTotal += S;
 }
 
-BDD ClosedList::getPartialClosed(int upper_bound) const {
+BDD ClosedList::getPartialClosed(Cost upper_bound) const {
     BDD res = mgr->zeroBDD();
     for (const auto &pair : closed) {
         if (pair.first > upper_bound) {
@@ -58,14 +60,14 @@ BDD ClosedList::getPartialClosed(int upper_bound) const {
     return res;
 }
 
-SymSolutionCut ClosedList::getCheapestCut(BDD states, int g, bool fw) const {
+SymSolutionCut ClosedList::getCheapestCut(BDD states, Cost g, bool fw) const {
     BDD cut_candidate = states * closedTotal;
     if (cut_candidate.IsZero()) {
         return SymSolutionCut();
     }
 
     for (const auto &closedH : closed) {
-        int h = closedH.first;
+        Cost h = closedH.first;
 
         BDD cut = closedH.second * cut_candidate;
         if (!cut.IsZero()) {
@@ -82,12 +84,12 @@ SymSolutionCut ClosedList::getCheapestCut(BDD states, int g, bool fw) const {
 }
 
 vector<SymSolutionCut> ClosedList::getAllCuts(
-    BDD states, int g, bool fw, int lower_bound) const {
+    BDD states, Cost g, bool fw, Cost lower_bound) const {
     vector<SymSolutionCut> result;
     BDD cut_candidate = states * closedTotal;
     if (!cut_candidate.IsZero()) {
         for (const auto &closedH : closed) {
-            int h = closedH.first;
+            Cost h = closedH.first;
 
             /* Here we also need to consider higher costs due to the
              architecture of symBD. Otherwise their occur problems in

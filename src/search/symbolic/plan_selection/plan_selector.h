@@ -10,6 +10,8 @@
 #include <memory>
 #include <unordered_map>
 
+#include "../cost.h"
+
 class StateRegistry;
 
 namespace symbolic {
@@ -52,7 +54,7 @@ public:
         return num_accepted_plans >= num_desired_plans;
     }
 
-    virtual bool reconstruct_solutions(int /*cost*/) const {
+    virtual bool reconstruct_solutions(Cost /*cost*/) const {
         return !found_enough_plans();
     }
 
@@ -71,7 +73,7 @@ public:
 
     const Plan &get_first_accepted_plan() const;
 
-    double get_first_plan_cost() const {
+    Cost get_first_plan_cost() const {
         return first_accepted_plan_cost;
     }
 
@@ -106,7 +108,7 @@ protected:
     std::unordered_map<size_t, std::vector<Plan>> hashes_rejected_plans;
 
     Plan first_accepted_plan;
-    double first_accepted_plan_cost;
+    Cost first_accepted_plan_cost;
 
     BDD states_accepted_goal_paths;
 

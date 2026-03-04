@@ -17,6 +17,8 @@
 #include <numeric>
 #include <queue>
 
+#include "cost.h"
+
 using namespace std;
 
 namespace symbolic {
@@ -56,7 +58,7 @@ SymStateSpaceManager::SymStateSpaceManager(
 void SymStateSpaceManager::zero_preimage(
     BDD bdd, vector<BDD> &res, int node_limit) const {
     for (const auto &tr :
-         sym_transition_relations.get_transition_relations().at(0)) {
+         sym_transition_relations.get_transition_relations().at(Cost::MIN)) {
         res.push_back(tr->preimage(bdd, node_limit));
     }
 }
@@ -64,16 +66,16 @@ void SymStateSpaceManager::zero_preimage(
 void SymStateSpaceManager::zero_image(
     BDD bdd, vector<BDD> &res, int node_limit) const {
     for (const auto &tr :
-         sym_transition_relations.get_transition_relations().at(0)) {
+         sym_transition_relations.get_transition_relations().at(Cost::MIN)) {
         res.push_back(tr->image(bdd, node_limit));
     }
 }
 
 void SymStateSpaceManager::cost_preimage(
-    BDD bdd, map<int, vector<BDD>> &res, int node_limit) const {
+    BDD bdd, map<Cost, vector<BDD>> &res, int node_limit) const {
     for (auto trs : sym_transition_relations.get_transition_relations()) {
-        int cost = trs.first;
-        if (cost == 0)
+        Cost cost = trs.first;
+        if (cost == Cost::MIN)
             continue;
         for (size_t i = 0; i < trs.second.size(); i++) {
             BDD result = trs.second[i]->preimage(bdd, node_limit);
@@ -83,10 +85,10 @@ void SymStateSpaceManager::cost_preimage(
 }
 
 void SymStateSpaceManager::cost_image(
-    BDD bdd, map<int, vector<BDD>> &res, int node_limit) const {
+    BDD bdd, map<Cost, vector<BDD>> &res, int node_limit) const {
     for (auto trs : sym_transition_relations.get_transition_relations()) {
-        int cost = trs.first;
-        if (cost == 0)
+        Cost cost = trs.first;
+        if (cost == Cost::MIN)
             continue;
         for (size_t i = 0; i < trs.second.size(); i++) {
             BDD result = trs.second[i]->image(bdd, node_limit);

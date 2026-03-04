@@ -2,24 +2,26 @@
 
 #include <vector>
 
+#include "../cost.h"
+
 using namespace std;
 
 namespace symbolic {
 SymSolutionCut::SymSolutionCut() : g(-1), h(-1) {
 }
 
-SymSolutionCut::SymSolutionCut(int g, int h, BDD cut) : g(g), h(h), cut(cut) {
+SymSolutionCut::SymSolutionCut(Cost g, Cost h, BDD cut) : g(g), h(h), cut(cut) {
 }
 
-int SymSolutionCut::get_g() const {
+Cost SymSolutionCut::get_g() const {
     return g;
 }
 
-int SymSolutionCut::get_h() const {
+Cost SymSolutionCut::get_h() const {
     return h;
 }
 
-int SymSolutionCut::get_f() const {
+Cost SymSolutionCut::get_f() const {
     return g + h;
 }
 
@@ -32,11 +34,11 @@ void SymSolutionCut::merge(const SymSolutionCut &other) {
     cut += other.get_cut();
 }
 
-void SymSolutionCut::set_g(int g) {
+void SymSolutionCut::set_g(Cost g) {
     this->g = g;
 }
 
-void SymSolutionCut::set_h(int h) {
+void SymSolutionCut::set_h(Cost h) {
     this->h = h;
 }
 

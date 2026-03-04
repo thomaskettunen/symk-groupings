@@ -13,6 +13,8 @@
 
 #include <memory>
 
+#include "../cost.h"
+
 namespace symbolic {
 /*
  * This class allows to perform a BDD search.  It is designed to
@@ -48,13 +50,13 @@ protected:
     bool lastStepCost; // If the last step was a cost step (to know if we are in
                        // estimationDisjCost or Zero)
 
-    int last_g_cost;
+    Cost last_g_cost;
 
     void violated(
         TruncatedReason reason, double time, int maxTime, int maxNodes);
 
     bool initialization() const {
-        return frontier.g() == 0 && lastStepCost;
+        return frontier.g() == Cost::MIN && lastStepCost;
     }
 
     /*
@@ -65,9 +67,9 @@ protected:
     /*
      * Check generated or closed states with other frontiers => solution check
      */
-    virtual void checkFrontierCut(Bucket &bucket, int g);
+    virtual void checkFrontierCut(Bucket &bucket, Cost g);
 
-    void closeStates(Bucket &bucket, int g);
+    void closeStates(Bucket &bucket, Cost g);
 
     bool prepareBucket();
 
@@ -104,11 +106,11 @@ public:
         std::shared_ptr<SymStateSpaceManager> manager, bool fw,
         UniformCostSearch *opposite_search); // Init forward or backward search
 
-    virtual int getF() const override {
+    virtual Cost getF() const override {
         return open_list.minNextG(frontier, mgr->get_min_transition_cost());
     }
 
-    virtual int getG() const {
+    virtual Cost getG() const {
         return frontier.empty() ? open_list.minG() : frontier.g();
     }
 

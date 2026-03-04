@@ -3,12 +3,14 @@
 
 #include "uniform_cost_search.h"
 
+#include "../cost.h"
+
 namespace symbolic {
 class TopkUniformCostSearch : public UniformCostSearch {
 protected:
     virtual bool provable_no_more_plans() override;
 
-    virtual void checkFrontierCut(Bucket &bucket, int g) override;
+    virtual void checkFrontierCut(Bucket &bucket, Cost g) override;
 
     virtual void filterFrontier() override;
 

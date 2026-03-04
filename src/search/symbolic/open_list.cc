@@ -4,22 +4,24 @@
 
 #include <cassert>
 
+#include "cost.h"
+
 using namespace std;
 
 namespace symbolic {
-void OpenList::insert(const Bucket &bucket, int g) {
+void OpenList::insert(const Bucket &bucket, symbolic::Cost g) {
     assert(!bucket.empty());
     copy_bucket(bucket, open[g]);
 }
 
-void OpenList::insert(const BDD &bdd, int g) {
+void OpenList::insert(const BDD &bdd, symbolic::Cost g) {
     assert(!bdd.IsZero());
     open[g].push_back(bdd);
 }
 
-int OpenList::minNextG(const Frontier &frontier, int min_action_cost) const {
-    int next_g =
-        (frontier.empty() ? numeric_limits<int>::max()
+symbolic::Cost OpenList::minNextG(const Frontier &frontier, symbolic::Cost min_action_cost) const {
+    symbolic::Cost next_g =
+        (frontier.empty() ? symbolic::Cost::MAX
                           : frontier.g() + min_action_cost);
     if (!open.empty()) {
         return min(next_g, open.begin()->first);
@@ -29,13 +31,13 @@ int OpenList::minNextG(const Frontier &frontier, int min_action_cost) const {
 
 void OpenList::pop(Frontier &frontier) {
     assert(frontier.empty());
-    int g = open.begin()->first;
+    symbolic::Cost g = open.begin()->first;
     frontier.set(g, open.begin()->second);
     open.erase(g);
 }
 
-int OpenList::minG() const {
-    return open.empty() ? numeric_limits<int>::max() : open.begin()->first;
+symbolic::Cost OpenList::minG() const {
+    return open.empty() ? symbolic::Cost::MAX : open.begin()->first;
 }
 
 bool OpenList::contains_any_state(const BDD &bdd) const {

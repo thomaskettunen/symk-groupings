@@ -56,12 +56,12 @@ void SymbolicSearch::initialize() {
         for (int var = 0; var < task->get_num_variables(); var++) {
             num_states *= task->get_variable_domain_size(var);
         }
-        double max_plan_cost =
-            (num_states - 1) *
+        Cost max_plan_cost =
+            (Cost(num_states) - Cost::ONE) * // TODO: P10: BAD Cost(), BAD ONE
             task_properties::get_max_operator_cost(task_proxy);
 
         upper_bound =
-            static_cast<int>(min((double)upper_bound, max_plan_cost + 1));
+            Cost::min(upper_bound, max_plan_cost + Cost::ONE); // TODO: P10: BAD ONE
         utils::g_log << "Maximal plan cost: " << upper_bound << endl;
         cout << endl;
     }
@@ -76,7 +76,7 @@ SearchStatus SymbolicSearch::step() {
     if (step_num == 0) {
         BDD cut = mgr->get_initial_state() * mgr->get_goal();
         if (!cut.IsZero()) {
-            new_solution(SymSolutionCut(0, 0, cut));
+            new_solution(SymSolutionCut(Cost::MIN, Cost::MIN, cut));
         }
     }
 
@@ -85,7 +85,7 @@ SearchStatus SymbolicSearch::step() {
     // Search finished!
     if (lower_bound >= upper_bound) {
         solution_registry->construct_cheaper_solutions(
-            numeric_limits<int>::max());
+            Cost::MAX);
         solution_found = plan_data_base->get_num_reported_plan() > 0;
         cur_status = solution_found ? SOLVED : FAILED;
     } else {
@@ -135,7 +135,7 @@ SearchStatus SymbolicSearch::step() {
     return cur_status;
 }
 
-void SymbolicSearch::setLowerBound(int lower) {
+void SymbolicSearch::setLowerBound(Cost lower) {
     if (lower > lower_bound) {
         lower_bound_increased = true;
     }

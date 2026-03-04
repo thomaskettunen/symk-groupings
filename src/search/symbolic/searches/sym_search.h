@@ -10,6 +10,8 @@
 #include <memory>
 #include <vector>
 
+#include "../cost.h"
+
 namespace symbolic {
 class SymbolicSearch;
 
@@ -40,7 +42,7 @@ public:
 
     virtual void stepImage(int maxTime, int maxNodes) = 0;
 
-    virtual int getF() const = 0;
+    virtual Cost getF() const = 0;
     virtual bool finished() const = 0;
 };
 }

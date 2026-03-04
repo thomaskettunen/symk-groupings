@@ -63,7 +63,7 @@ void TopkSymbolicUniformCostSearch::new_solution(const SymSolutionCut &sol) {
     if (!solution_registry->found_all_plans()) {
         solution_registry->register_solution(sol);
     } else {
-        lower_bound = numeric_limits<int>::max();
+        lower_bound = Cost::MAX;
     }
 }
 class TopkSymbolicForwardUniformCostSearchFeature

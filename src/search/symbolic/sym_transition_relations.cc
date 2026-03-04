@@ -8,6 +8,8 @@
 
 #include <numeric>
 
+#include "cost.h"
+
 using namespace std;
 
 namespace symbolic {
@@ -59,7 +61,7 @@ void SymTransitionRelations::init(
     }
 
     min_transition_cost = individual_transitions.empty()
-                              ? numeric_limits<int>::max()
+                              ? Cost::MAX
                               : individual_transitions.begin()->first;
     utils::g_log << "Merged transition relations: " << get_size(transitions)
                  << endl;
@@ -96,7 +98,7 @@ void SymTransitionRelations::create_single_trs(
     }
 
     for (int i = 0; i < task->get_num_operators(); ++i) {
-        int cost = task->get_operator_cost(i, false);
+        Cost cost = Cost(task->get_operator_cost(i, false)); // TODO: P10: Bad and horrible;
 
         if (is_ce_transition_type_conjunctive(sym_params.ce_transition_type) &&
             task_properties::has_conditional_effects(
@@ -154,7 +156,7 @@ void SymTransitionRelations::create_merged_transitions() {
 
 void SymTransitionRelations::move_monolithic_conj_transitions() {
     // Temporary map to hold new individual_disj_transitions
-    map<int, vector<ConjunctiveTransitionRelation>>
+    map<Cost, vector<ConjunctiveTransitionRelation>>
         new_individual_conj_transitions;
 
     for (auto &[cost, tr_vec] : individual_conj_transitions) {
@@ -172,30 +174,30 @@ void SymTransitionRelations::move_monolithic_conj_transitions() {
 }
 
 template<class T>
-int SymTransitionRelations::get_size(map<int, vector<T>> transitions) const {
+int SymTransitionRelations::get_size(map<Cost, vector<T>> transitions) const {
     return accumulate(
         transitions.begin(), transitions.end(), 0,
         [](int sum, const auto &pair) { return sum + pair.second.size(); });
 }
 
-int SymTransitionRelations::get_min_transition_cost() const {
+Cost SymTransitionRelations::get_min_transition_cost() const {
     return min_transition_cost;
 }
 
 bool SymTransitionRelations::has_zero_cost_transition() const {
-    return min_transition_cost == 0;
+    return min_transition_cost == Cost::MIN;
 }
 
 bool SymTransitionRelations::has_unit_cost() const {
     return transitions.size();
 }
 
-const map<int, vector<TransitionRelationPtr>> &
+const map<Cost, vector<TransitionRelationPtr>> &
 SymTransitionRelations::get_transition_relations() const {
     return transitions;
 }
 
-const map<int, vector<TransitionRelationPtr>> &
+const map<Cost, vector<TransitionRelationPtr>> &
 SymTransitionRelations::get_individual_transition_relations() const {
     return individual_transitions;
 }
