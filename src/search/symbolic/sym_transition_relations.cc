@@ -100,6 +100,13 @@ void SymTransitionRelations::create_single_trs(
     for (int i = 0; i < task->get_num_operators(); ++i) {
         Cost cost = Cost(task->get_operator_cost(i, false)); // TODO: P10: Bad and horrible;
 
+        // NOTE: P10: welp std::map uses strict ordering which we kinda can't gaurentee with our cost multiset
+            // NOTE: p10: regex for all places we iterate over the transitions "for *\(.*: *[a-zA-Z0-9_]*_transitions\)"
+        // NOTE: P10: this is the part where we decide which costs are equal (domain specific somehow)
+
+        // TODO: P10: implement the Cost groupings here
+
+        // P10 NOTE ce transitions are (probably) never used so its always the else case for us (-supervisor)
         if (is_ce_transition_type_conjunctive(sym_params.ce_transition_type) &&
             task_properties::has_conditional_effects(
                 task_proxy, OperatorID(i))) {

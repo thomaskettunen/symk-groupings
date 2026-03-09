@@ -13,5 +13,13 @@
 			"// TODO: P10: $1",
 		],
 		"description": "todo"
-	}
+	},
+	"Note": {
+		"scope": "c,cpp",
+		"prefix": "note",
+		"body": [
+			"// NOTE: P10: $1",
+		],
+		"description": "note"
+	},
 }
