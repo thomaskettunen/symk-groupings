@@ -1,4 +1,6 @@
 #include "cost.h"
+#include "../plan_manager.h"
+#include "../task_proxy.h"
 #include "../utils/hash.h"
 #include "../abstract_task.h"
 
@@ -9,17 +11,18 @@
 #include <memory>
 
 namespace symbolic {
-Cost::Cost() : value(0) {};
-Cost::Cost(int value) : value(value) {};
+Cost::Cost() : magic(CostMagicFlags::EMPTY_CONSTRUCTOR), value() {};
+Cost::Cost(CostMagicFlags flag) : magic(flag) {};
+Cost::Cost(std::shared_ptr<AbstractTask> task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{get_group_id(task, op), 1}}) {}
 
-const Cost Cost::NO_VALUE = Cost(-2);
-const Cost Cost::UNINITIALIZED = Cost(-2);
-const Cost Cost::INVALID = Cost(-1);
-const Cost Cost::DEAD_END = Cost(-1);
-const Cost Cost::MIN = Cost(0);
-const Cost Cost::ONE = Cost(1);
-const Cost Cost::MAX = Cost(std::numeric_limits<int>::max());
-const Cost Cost::INFTY = Cost(std::numeric_limits<int>::max());
+// TODO: P10: Fake all operators in group 0 for now
+//. We probably need to unify the whole std::shared_ptr<AbstracTast> vs TaskProxy dichotomy
+Cost::Cost(TaskProxy task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{0, 1}}) /*value({{get_group_id(task, op), 1}})*/ {}
+
+const Cost Cost::INVALID = Cost(CostMagicFlags::INVALID);
+const Cost Cost::MIN = Cost(CostMagicFlags::MIN);
+const Cost Cost::ONE = Cost(CostMagicFlags::ONE);
+const Cost Cost::MAX = Cost(CostMagicFlags::MAX);
 
 Cost &Cost::operator+=(const Cost &other) {
     for (const auto& [group, amount] : other.value) {
@@ -31,6 +34,7 @@ Cost &Cost::operator+=(const Cost &other) {
     }
     return *this;
 }
+
 Cost &Cost::operator-=(const Cost &other) {
     for (const auto& [group, amount] : other.value) {
         if (this->value.find(group) != this->value.end()) {
@@ -41,20 +45,42 @@ Cost &Cost::operator-=(const Cost &other) {
     }
     return *this;
 }
+
 Cost Cost::operator+(const Cost other) const {
     Cost tmp = *this;
     tmp += other;
     return tmp;
 }
+
 Cost Cost::operator-(const Cost other) const {
     Cost tmp = *this;
     tmp -= other;
     return tmp;
 }
+
 Cost Cost::operator*(const double other) const {
     throw std::runtime_error("there are no doubles");
 }
+
 bool Cost::operator>=(const Cost &other) const {
+    switch (this->magic)
+    {
+        case CostMagicFlags::MAX: return true;
+        case CostMagicFlags::MIN: return (other.magic == CostMagicFlags::MIN);
+        case CostMagicFlags::NORMAL: break;
+        case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
+        default: throw std::runtime_error("P10: Unsure how to handle >= for cost with lhs->magic:" + this->magic);
+    }
+
+    switch (other.magic)
+    {
+        case CostMagicFlags::MAX: return (this->magic == CostMagicFlags::MAX);
+        case CostMagicFlags::MIN: return true;
+        case CostMagicFlags::NORMAL: break;
+        case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
+        default: throw std::runtime_error("P10: Unsure how to handle >= for cost with rhs->magic:" + other.magic);
+    }
+
     for (const auto& [group, amount] : other.value) {
         if (this->value.find(group) != this->value.end()) {
             if (!(this->value.at(group) >= amount)) return false;
@@ -64,7 +90,26 @@ bool Cost::operator>=(const Cost &other) const {
     }
     return true;
 }
+
 bool Cost::operator<=(const Cost &other) const {
+    switch (this->magic)
+    {
+        case CostMagicFlags::MAX: return true;
+        case CostMagicFlags::MIN: return (other.magic == CostMagicFlags::MIN);
+        case CostMagicFlags::NORMAL: break;
+        case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
+        default: throw std::runtime_error("P10: Unsure how to handle <= for cost with lhs->magic:" + this->magic);
+    }
+
+    switch (other.magic)
+    {
+        case CostMagicFlags::MAX: return true;
+        case CostMagicFlags::MIN: return (this->magic == CostMagicFlags::MIN);
+        case CostMagicFlags::NORMAL: break;
+        case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
+        default: throw std::runtime_error("P10: Unsure how to handle <= for cost with rhs->magic:" + other.magic);
+    }
+
     for (const auto& [group, amount] : this->value) {
         if (other.value.find(group) != other.value.end()) {
             if (!(this->value.at(group) <= amount)) return false;
@@ -74,7 +119,26 @@ bool Cost::operator<=(const Cost &other) const {
     }
     return true;
 }
+
 bool Cost::operator>(const Cost &other) const {
+    switch (this->magic)
+    {
+        case CostMagicFlags::MAX: return !(other.magic == CostMagicFlags::MAX);
+        case CostMagicFlags::MIN: return false;
+        case CostMagicFlags::NORMAL: break;
+        case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
+        default: throw std::runtime_error("P10: Unsure how to handle > for cost with lhs->magic:" + this->magic);
+    }
+
+    switch (other.magic)
+    {
+        case CostMagicFlags::MAX: return false;
+        case CostMagicFlags::MIN: return !(this->magic == CostMagicFlags::MIN);
+        case CostMagicFlags::NORMAL: break;
+        case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
+        default: throw std::runtime_error("P10: Unsure how to handle > for cost with rhs->magic:" + other.magic);
+    }
+
     if (!(*this >= other)) {
         return false;
     }
@@ -88,7 +152,26 @@ bool Cost::operator>(const Cost &other) const {
     }
     return false;
 }
+
 bool Cost::operator<(const Cost &other) const {
+    switch (this->magic)
+    {
+        case CostMagicFlags::MAX: return false;
+        case CostMagicFlags::MIN: return !(other.magic == CostMagicFlags::MIN);
+        case CostMagicFlags::NORMAL: break;
+        case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
+        default: throw std::runtime_error("P10: Unsure how to handle < for cost with lhs->magic:" + this->magic);
+    }
+
+    switch (other.magic)
+    {
+        case CostMagicFlags::MAX: return !(this->magic == CostMagicFlags::MAX);
+        case CostMagicFlags::MIN: return false;
+        case CostMagicFlags::NORMAL: break;
+        case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
+        default: throw std::runtime_error("P10: Unsure how to handle < for cost with rhs->magic:" + other.magic);
+    }
+
     if (!(*this <= other)){
         return false;
     }
@@ -102,9 +185,11 @@ bool Cost::operator<(const Cost &other) const {
     }
     return false;
 }
+
 bool Cost::operator==(const Cost &other) const {
     return *this >= other && *this <= other;
 }
+
 bool Cost::operator!=(const Cost &other) const {
     return !(*this == other);
 }
@@ -112,8 +197,17 @@ bool Cost::operator!=(const Cost &other) const {
 Cost Cost::min(Cost first, Cost second) {
     throw std::runtime_error("min not implemented no total order");
 }
+
 Cost Cost::max(Cost first, Cost second) {
     throw std::runtime_error("max not implemented no total order");
+}
+
+Cost Cost::plan_cost(const Plan &plan, const TaskProxy &task) {
+    Cost plan_cost = Cost();
+    for (OperatorID op_id : plan) {
+        plan_cost += Cost(task, op_id);
+    }
+    return plan_cost;
 }
 
 std::string to_string(const Cost c) {
@@ -124,6 +218,7 @@ std::string to_string(const Cost c) {
     
     return "Cost(\n" + outputString + ")";
 }
+
 std::ostream &operator<<(std::ostream &os, const Cost &c) {
     return os << to_string(c);
 }
@@ -138,11 +233,8 @@ std::string Cost::get_group_name(int group_no) {
 }
 
 GroupID Cost::get_group_id(const std::shared_ptr<AbstractTask> task, OperatorID op_id) {
-    // ASS: map from operator name (string) to group name (string)
     std::function<std::string(std::string)> op_name_to_group_name = [](std::string op_name) {
-        // ASS: This is prefix
-        // return op_name.substr(0, op_name.find(' ')); //. Prefix_1 (remember to change the name!!)
-        return op_name.substr(0, op_name.find(' ', op_name.find(' ') + 1)); //. Prefix_2 (remember to change the name!!)
+        return op_name.substr(0, op_name.find(' '));
     };
 
     auto op_name = task->get_operator_name(op_id.get_index(), false);

@@ -121,7 +121,7 @@ public:
     }
 
     Cost cheapest_solution_cost_found() const {
-        Cost cheapest = Cost::INFTY;
+        Cost cheapest = Cost::MAX;
         if (plan_data_base) {
             cheapest =
                 Cost::min(cheapest, plan_data_base->get_first_plan_cost());

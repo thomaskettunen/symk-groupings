@@ -2,6 +2,7 @@
 #define COST_H
 
 #include "cost.h"
+#include "../plan_manager.h"
 #include "../utils/hash.h"
 #include "../abstract_task.h"
 
@@ -26,45 +27,54 @@ namespace std {
 }
 
 namespace symbolic {
+    enum CostMagicFlags {
+        NORMAL,
+        EMPTY_CONSTRUCTOR,
+        INVALID,
+        MIN,
+        ONE,
+        MAX,
+    };
+
     class Cost {
         public:
-        explicit Cost();
-        explicit Cost(int value);
+            explicit Cost();
+            explicit Cost(CostMagicFlags);
+            Cost(std::shared_ptr<AbstractTask> task, OperatorID op);
+            Cost(TaskProxy task, OperatorID op);
 
-        static const Cost NO_VALUE;
-        static const Cost UNINITIALIZED;
-        static const Cost INVALID;
-        static const Cost DEAD_END;
-        static const Cost MIN;
-        static const Cost ONE;
-        static const Cost MAX;
-        static const Cost INFTY;
+            static const Cost INVALID;
+            static const Cost MIN;
+            static const Cost ONE;
+            static const Cost MAX;
 
-        Cost &operator+=(const Cost &other);
-        Cost &operator-=(const Cost &other);
-        Cost operator+(const Cost other) const;
-        Cost operator-(const Cost other) const;
-        Cost operator*(const double other) const;
-        bool operator>=(const Cost &other) const;
-        bool operator<=(const Cost &other) const;
-        bool operator>(const Cost &other) const;
-        bool operator<(const Cost &other) const;
-        bool operator==(const Cost &other) const;
-        bool operator!=(const Cost &other) const;
+            Cost &operator+=(const Cost &other);
+            Cost &operator-=(const Cost &other);
+            Cost operator+(const Cost other) const;
+            Cost operator-(const Cost other) const;
+            Cost operator*(const double other) const;
+            bool operator>=(const Cost &other) const;
+            bool operator<=(const Cost &other) const;
+            bool operator>(const Cost &other) const;
+            bool operator<(const Cost &other) const;
+            bool operator==(const Cost &other) const;
+            bool operator!=(const Cost &other) const;
 
-        static Cost min(Cost first, Cost second);
-        static Cost max(Cost first, Cost second);
+            static Cost min(Cost first, Cost second);
+            static Cost max(Cost first, Cost second);
+            static Cost plan_cost(const Plan &plan, const TaskProxy &task_proxy);
 
-        friend std::string to_string(const Cost c);
-        friend std::ostream &operator<<(std::ostream &os, const Cost &c);
-        friend std::size_t std::hash<Cost>::operator()(const Cost& cost) const;
-        
+            friend std::string to_string(const Cost c);
+            friend std::ostream &operator<<(std::ostream &os, const Cost &c);
+            friend std::size_t std::hash<Cost>::operator()(const Cost& cost) const;
+
         private:
-        std::string get_group_name(int group_no);
-        static std::unordered_map<std::string, int> group_name_to_group_id;
-        GroupID get_group_id(const std::shared_ptr<AbstractTask> task, OperatorID op_id);
-        
-        std::unordered_map<GroupID, int> value;
+            std::string get_group_name(int group_no);
+            static std::unordered_map<std::string, int> group_name_to_group_id;
+            GroupID get_group_id(const std::shared_ptr<AbstractTask> task, OperatorID op_id);
+
+            int magic;
+            std::unordered_map<GroupID, int> value;
     };
 }
 

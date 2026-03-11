@@ -27,7 +27,7 @@ PlanSelector::PlanSelector(const plugins::Options &opts)
       num_accepted_plans(0),
       num_rejected_plans(0),
       plan_mgr_task_proxy(*tasks::g_root_task),
-      first_accepted_plan_cost(Cost::INFTY) {
+      first_accepted_plan_cost(Cost::MAX) {
 }
 
 void PlanSelector::init(
@@ -132,7 +132,7 @@ void PlanSelector::save_accepted_plan(const Plan &plan) {
     if (num_accepted_plans == 0) {
         first_accepted_plan = plan;
         first_accepted_plan_cost =
-            Cost(calculate_plan_cost(plan, state_registry->get_task_proxy())); // TODO: P10: Not here either
+            Cost::plan_cost(plan, state_registry->get_task_proxy());
 
         if (!write_plans) {
             plan_mgr.save_plan(

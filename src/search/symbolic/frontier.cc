@@ -9,7 +9,7 @@
 using namespace std;
 
 namespace symbolic {
-Frontier::Frontier() : mgr(nullptr), g_value(0) {
+Frontier::Frontier() : mgr(nullptr), g_value(Cost::MIN) { // NOTE: P10: I think this shoud be MIN, before it was 0
 }
 
 void Frontier::init(SymStateSpaceManager *mgr_, const BDD &bdd) {

@@ -7,7 +7,7 @@
 using namespace std;
 
 namespace symbolic {
-SymSolutionCut::SymSolutionCut() : g(-1), h(-1) {
+SymSolutionCut::SymSolutionCut() : g(Cost::INVALID), h(Cost::INVALID) { // TODO: P10: Is INVALID correct here? Before it was -1
 }
 
 SymSolutionCut::SymSolutionCut(Cost g, Cost h, BDD cut) : g(g), h(h), cut(cut) {

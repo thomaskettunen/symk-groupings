@@ -24,7 +24,7 @@ void UnorderedSelector::save_accepted_plan(
     if (num_accepted_plans == 0) {
         first_accepted_plan = ordered_plan;
         first_accepted_plan_cost =
-            Cost(calculate_plan_cost(ordered_plan, state_registry->get_task_proxy())); // TODO: P10: I don't think this is where we should do this for real
+            Cost::plan_cost(ordered_plan, state_registry->get_task_proxy());
 
         if (!write_plans) {
             plan_mgr.save_plan(

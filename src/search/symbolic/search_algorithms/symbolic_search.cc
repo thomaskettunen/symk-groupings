@@ -23,9 +23,9 @@ SymbolicSearch::SymbolicSearch(const plugins::Options &opts)
       sym_params(opts, task),
       step_num(-1),
       lower_bound_increased(true),
-      lower_bound(0),
-      upper_bound(bound),
-      min_g(0),
+      lower_bound(Cost::MIN),
+      upper_bound(Cost::MAX), // TODO: P10: Here we also ignore bound and just set it to max, make sure it doesn't fuck us
+      min_g(Cost::MIN),
       plan_data_base(opts.get<shared_ptr<PlanSelector>>("plan_selection")),
       solution_registry(make_shared<SymSolutionRegistry>()),
       simple(opts.get<bool>("simple")),
@@ -56,12 +56,9 @@ void SymbolicSearch::initialize() {
         for (int var = 0; var < task->get_num_variables(); var++) {
             num_states *= task->get_variable_domain_size(var);
         }
-        Cost max_plan_cost =
-            (Cost(num_states) - Cost::ONE) * // TODO: P10: BAD Cost(), BAD ONE
-            task_properties::get_max_operator_cost(task_proxy);
+        Cost max_plan_cost = Cost::MAX; // TODO: P10: Once again we simply lie about the upper bound
+        upper_bound = Cost::MAX; // TODO: P10: See above
 
-        upper_bound =
-            Cost::min(upper_bound, max_plan_cost + Cost::ONE); // TODO: P10: BAD ONE
         utils::g_log << "Maximal plan cost: " << upper_bound << endl;
         cout << endl;
     }
