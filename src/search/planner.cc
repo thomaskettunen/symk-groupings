@@ -14,6 +14,10 @@ using namespace std;
 using utils::ExitCode;
 
 int main(int argc, const char **argv) {
+#ifdef FAKE_STD_IN
+    std::cout << "FAKE_STD_IN set, ignoring stdin, using \"" << FAKE_STD_IN << "\" instead" << std::endl;
+    freopen(FAKE_STD_IN, "r", stdin);
+#endif
     try {
         if (argc == 2 &&
             static_cast<string>(argv[1]) == "--internal-git-revision") {

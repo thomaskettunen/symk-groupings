@@ -1,0 +1,38 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Downward (symbolic)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/builds/symbolic/bin/downward",
+      "args": [
+        "--search",
+        "symk_bd(plan_selection=top_k(num_plans=${input:numPlans},dump_plans=false))",
+        "--internal-plan-file",
+        "sas_plan",
+      ],
+      "cwd": "${workspaceFolder}",
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "stopAtEntry": true,
+      "externalConsole": false,
+      "preLaunchTask": "translate-symbolic",
+      "setupCommands": [
+        {
+          "description": "Enable pretty printing",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true,
+        },
+      ],
+    },
+  ],
+  "inputs": [
+    {
+      "id": "numPlans",
+      "type": "promptString",
+      "description": "Enter k, to find top-k plans",
+      "default": "10"
+    },
+  ],
+}

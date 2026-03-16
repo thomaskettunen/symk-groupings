@@ -46,6 +46,11 @@ set_up_options()
 project(downward LANGUAGES CXX)
 add_executable(downward planner.cc)
 
+if(FAKE_STD_IN)
+    message(NOTICE "FAKE_STD_IN set, Hardcoding input path to \"${FAKE_STD_IN}\"")
+    target_compile_definitions(downward PRIVATE FAKE_STD_IN="${FAKE_STD_IN}")
+endif()
+
 # obtain git SHA1 hash
 execute_process(
     COMMAND git log -1 "--format=format:%h%n" HEAD
