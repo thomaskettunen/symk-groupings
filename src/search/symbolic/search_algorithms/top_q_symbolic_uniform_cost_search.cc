@@ -19,8 +19,7 @@ void TopqSymbolicUniformCostSearch::new_solution(const SymSolutionCut &sol) {
         solution_registry->register_solution(sol);
         if (get_quality_bound() < Cost::MAX) {
             // utils::g_log << "Quality bound: " << get_quality_bound() << endl;
-            upper_bound = 
-                Cost::min(upper_bound, get_quality_bound() + Cost::ONE); // TODO: P10: BAD ONE
+            upper_bound = Cost::min(upper_bound, get_quality_bound().upper_bound());
         }
     } else {
         lower_bound = Cost::MAX;

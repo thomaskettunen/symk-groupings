@@ -33,8 +33,11 @@ public:
     virtual Cost getF() const override {
         return Cost::max(
             Cost::max(fw->getF(), bw->getF()),
-            fw->getG() + bw->getG() +
-                Cost::min(Cost::ONE, mgr->get_min_transition_cost())); // TODO: P10: Why one?
+            fw->getG() + bw->getG() 
+                // TODO: P10: Figure out if this min wiht ONE is really needed...
+                // + Cost::min(Cost::ONE, mgr->get_min_transition_cost())
+                + mgr->get_min_transition_cost()
+        );
     }
 
     bool isExpFor(BidirectionalSearch *bdExp) const;

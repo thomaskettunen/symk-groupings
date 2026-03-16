@@ -36,6 +36,8 @@ namespace symbolic {
         MAX,
     };
 
+    std::string magic_to_string(CostMagicFlags flag);
+
     class Cost {
         public:
             explicit Cost();
@@ -45,9 +47,10 @@ namespace symbolic {
 
             static const Cost INVALID;
             static const Cost MIN;
-            static const Cost ONE;
             static const Cost MAX;
-
+            
+            Cost lower_bound();
+            Cost upper_bound();
             Cost &operator+=(const Cost &other);
             Cost &operator-=(const Cost &other);
             Cost operator+(const Cost other) const;
@@ -73,7 +76,7 @@ namespace symbolic {
             static std::unordered_map<std::string, int> group_name_to_group_id;
             GroupID get_group_id(const std::shared_ptr<AbstractTask> task, OperatorID op_id);
 
-            int magic;
+            CostMagicFlags magic;
             std::unordered_map<GroupID, int> value;
     };
 }

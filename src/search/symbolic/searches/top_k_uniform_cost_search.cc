@@ -15,7 +15,7 @@ bool TopkUniformCostSearch::provable_no_more_plans() {
     // search dir. Thus we consider all smaller
     if (getG() > last_g_cost) {
         BDD no_goal_path_states = !engine->get_states_on_goal_paths();
-        no_goal_path_states *= closed->getPartialClosed(last_g_cost - Cost::ONE); // TODO: P10: BAD BAD BAD BAD FIX NOT ONE BAD PLEASE FIX PLEASE I BEG OF YOU
+        no_goal_path_states *= closed->getPartialClosed(last_g_cost.lower_bound()); 
         if (!open_list.contains_any_state(!no_goal_path_states)) {
             return true; // Search finished
         }
