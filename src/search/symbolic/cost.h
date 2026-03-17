@@ -74,7 +74,7 @@ namespace symbolic {
         private:
             std::string get_group_name(int group_no);
             static std::unordered_map<std::string, int> group_name_to_group_id;
-            GroupID get_group_id(const std::shared_ptr<AbstractTask> task, OperatorID op_id);
+            GroupID get_group_id(const TaskProxy task, OperatorID op_id);
 
             CostMagicFlags magic;
             std::unordered_map<GroupID, int> value;

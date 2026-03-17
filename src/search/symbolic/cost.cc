@@ -29,11 +29,11 @@ std::string magic_to_string(CostMagicFlags flag) {
 
 Cost::Cost() : magic(CostMagicFlags::EMPTY_CONSTRUCTOR), value() {};
 Cost::Cost(CostMagicFlags flag) : magic(flag) {};
-Cost::Cost(std::shared_ptr<AbstractTask> task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{0, 1}}) {}
+Cost::Cost(std::shared_ptr<AbstractTask> task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{get_group_id(TaskProxy(*task), op), 1}}) {} //P10 converted to TaskProxy because it was easier than the other way or doing overloading
 
 // TODO: P10: Fake all operators in group 0 for now
 //. We probably need to unify the whole std::shared_ptr<AbstracTast> vs TaskProxy dichotomy
-Cost::Cost(TaskProxy task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{0, 1}}) /*value({{get_group_id(task, op), 1}})*/ {}
+Cost::Cost(TaskProxy task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{get_group_id(task, op), 1}}) /*value({{get_group_id(task, op), 1}})*/ {}
 
 const Cost Cost::INVALID = Cost(CostMagicFlags::INVALID);
 const Cost Cost::MIN = Cost(CostMagicFlags::MIN);
@@ -294,6 +294,7 @@ std::ostream &operator<<(std::ostream &os, const Cost &c) {
 
 std::unordered_map<std::string, int> Cost::group_name_to_group_id; // NOTE: P10: may cause secret spooky error check here if ghosts appear
 
+
 std::string Cost::get_group_name(int group_no) {
     for (auto &it : Cost::group_name_to_group_id) {
         if (it.second == group_no) return it.first;
@@ -301,13 +302,37 @@ std::string Cost::get_group_name(int group_no) {
     return std::string("No matching group");
 }
 
-GroupID Cost::get_group_id(const std::shared_ptr<AbstractTask> task, OperatorID op_id) {
-    std::function<std::string(std::string)> op_name_to_group_name = [](std::string op_name) {
-        return op_name.substr(0, op_name.find(' '));
+GroupID Cost::get_group_id(const TaskProxy task, OperatorID op_id) {
+    std::function<std::string(std::string, int, std::vector<std::string>)> op_name_to_group_name = [](std::string op_name, int prefixSize, std::vector<std::string> words) {
+        if(words.size() == 0){
+            size_t pos = 0;
+            for(int i = 0; i < prefixSize; i++){
+                pos = op_name.find(' ', pos + (i > 0));
+                if(pos == std::string::npos){
+                    return op_name; //if they are too short whatever we just give back the whole string
+                }
+            }
+            if(pos != 0) {
+                return op_name.substr(0, pos);
+            }else {
+                return op_name;
+            }
+        }else {
+            for (std::string word : words){
+                if(op_name.find(word) != std::string::npos){
+                    return word;
+                }
+            }
+            return op_name; // if not in any group you get no cool name
+        }
     };
+    int prefixSize = 1; // temporary prefix value frankly i do not know where i should put it
+    std::vector<std::string> words; //if we want to filter on specific words
 
-    auto op_name = task->get_operator_name(op_id.get_index(), false);
-    auto group_name = op_name_to_group_name(op_name);
+    // todo grouping on specific words
+
+    auto op_name = task.get_operators()[op_id.get_index()].get_name(); //P10 unsure if this is actually the name we will get 
+    auto group_name = op_name_to_group_name(op_name, prefixSize, words);
     GroupID group_id;
     auto it = Cost::group_name_to_group_id.find(group_name);
     if (it != Cost::group_name_to_group_id.end()) {
