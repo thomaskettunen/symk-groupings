@@ -327,22 +327,22 @@ std::string Cost::get_group_name(int group_no) {
 
 GroupID Cost::get_group_id(const TaskProxy task, OperatorID op_id) {
     std::function<std::string(std::string, int, std::vector<std::string>)> op_name_to_group_name = [](std::string op_name, int prefixSize, std::vector<std::string> words) {
-        if(words.size() == 0){
+        if (words.size() == 0) {
             size_t pos = 0;
-            for(int i = 0; i < prefixSize; i++){
+            for (int i = 0; i < prefixSize; i++) {
                 pos = op_name.find(' ', pos + (i > 0));
-                if(pos == std::string::npos){
+                if (pos == std::string::npos) {
                     return op_name; //if they are too short whatever we just give back the whole string
                 }
             }
-            if(pos != 0) {
+            if (pos != 0) {
                 return op_name.substr(0, pos);
-            }else {
+            } else {
                 return op_name;
             }
-        }else {
-            for (std::string word : words){
-                if(op_name.find(word) != std::string::npos){
+        } else {
+            for (std::string word : words) {
+                if (op_name.find(word) != std::string::npos) {
                     return word;
                 }
             }
