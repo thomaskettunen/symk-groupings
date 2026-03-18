@@ -21,7 +21,6 @@ std::string magic_to_string(CostMagicFlags flag) {
         case EMPTY_CONSTRUCTOR: return std::string("EMPTY_CONSTRUCTOR");
         case INVALID: return std::string("INVALID");
         case MIN: return std::string("MIN");
-        case ONE: return std::string("ONE");
         case MAX: return std::string("MAX");
         default: std::cerr << "Unknown CostMagicFlags: " + std::to_string((int)flag) + ", cannot convert to string" << std::endl; assert(false);
     }
@@ -103,9 +102,9 @@ Cost Cost::operator-(const Cost other) const {
     return tmp;
 }
 
-Cost Cost::operator*(const double other) const {
-    throw std::runtime_error("there are no doubles");
-}
+// Cost Cost::operator*(const double other) const {
+//     throw std::runtime_error("there are no doubles");
+// }
 
 bool Cost::operator>=(const Cost &other) const {
     switch (this->magic)
@@ -345,9 +344,9 @@ GroupID Cost::get_group_id(const TaskProxy task, OperatorID op_id) {
 };
 }
 
-namespace std {
-    size_t hash<symbolic::Cost>::operator()(const symbolic::Cost& cost) const {
-        // TODO: P10: make a real human hash function
-        return 1;
-    }
-}
+// namespace std {
+//     size_t hash<symbolic::Cost>::operator()(const symbolic::Cost& cost) const {
+//         // TODO: P10: make a real human hash function
+//         return 1;
+//     }
+// }

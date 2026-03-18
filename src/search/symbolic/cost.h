@@ -15,16 +15,16 @@
 
 using GroupID = int;
 
-namespace symbolic {
-    class Cost;
-}
+// namespace symbolic {
+//     class Cost;
+// }
 
-namespace std {
-    template <> class hash<symbolic::Cost> {
-        public:
-        size_t operator()(const symbolic::Cost& cost) const;
-    };
-}
+// namespace std {
+//     template <> class hash<symbolic::Cost> {
+//         public:
+//         size_t operator()(const symbolic::Cost& cost) const;
+//     };
+// }
 
 namespace symbolic {
     enum CostMagicFlags {
@@ -32,7 +32,6 @@ namespace symbolic {
         EMPTY_CONSTRUCTOR,
         INVALID,
         MIN,
-        ONE,
         MAX,
     };
 
@@ -55,7 +54,7 @@ namespace symbolic {
             Cost &operator-=(const Cost &other);
             Cost operator+(const Cost other) const;
             Cost operator-(const Cost other) const;
-            Cost operator*(const double other) const;
+            // Cost operator*(const double other) const;
             bool operator>=(const Cost &other) const;
             bool operator<=(const Cost &other) const;
             bool operator>(const Cost &other) const;
@@ -69,7 +68,7 @@ namespace symbolic {
 
             friend std::string to_string(const Cost c);
             friend std::ostream &operator<<(std::ostream &os, const Cost &c);
-            friend std::size_t std::hash<Cost>::operator()(const Cost& cost) const;
+            // friend std::size_t std::hash<Cost>::operator()(const Cost& cost) const;
 
         private:
             std::string get_group_name(int group_no);
