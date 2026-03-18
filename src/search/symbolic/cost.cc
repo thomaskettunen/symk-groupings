@@ -295,12 +295,20 @@ Cost Cost::plan_cost(const Plan &plan, const TaskProxy &task) {
 }
 
 std::string to_string(const Cost c) {
+    switch (c.magic)
+    {
+        case CostMagicFlags::INVALID: return std::string("Cost(INVALID)");
+        case CostMagicFlags::MAX: return std::string("Cost(MAX)");
+        case CostMagicFlags::MIN: return std::string("Cost(MIN)");
+        default: break;
+    }
+
     std::string outputString = "";
     for (const auto& [group, amount] : c.value) {
-        outputString += "\t( " + std::to_string(group) + ": " + std::to_string(amount) + ")\n";
+        outputString += "{" + std::to_string(group) + ": " + std::to_string(amount) + "},";
     }
     
-    return "Cost(\n" + outputString + ")";
+    return "Cost(" + outputString + ")";
 }
 
 std::ostream &operator<<(std::ostream &os, const Cost &c) {
