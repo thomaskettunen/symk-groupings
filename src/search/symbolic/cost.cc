@@ -69,6 +69,9 @@ Cost Cost::upper_bound() {
 }
 
 Cost &Cost::operator+=(const Cost &other) {
+    if (this->magic == CostMagicFlags::MIN) {
+        this->magic = other.magic;
+    }
     for (const auto& [group, amount] : other.value) {
         if (this->value.find(group) != this->value.end()) {
             this->value[group] += amount;
