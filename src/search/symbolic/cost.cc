@@ -129,7 +129,7 @@ bool Cost::operator>=(const Cost &other) const {
     {
         case CostMagicFlags::MAX: return (this->magic == CostMagicFlags::MAX);
         case CostMagicFlags::MIN: return true;
-        case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" then every valid value I think
+        case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
         case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
         default: throw std::runtime_error("P10: Unsure how to handle >= for cost with rhs->magic:" + magic_to_string(other.magic));
@@ -145,8 +145,8 @@ bool Cost::operator>=(const Cost &other) const {
     }
 
     for (const auto& group : keys) { // NOTE: P10: Iterated in order of keys
-        if (this->value.find(group) == this->value.end()) return false; //. "this" has zero of somethign that "other" has >0 of, hence "this" < "other"
-        if (other.value.find(group) == other.value.end()) return true; //. "other" has zero of somethign that "this" has >0 of, hence "other" < "this"
+        if (this->value.find(group) == this->value.end()) return false; //. "this" has zero of something that "other" has >0 of, hence "this" < "other"
+        if (other.value.find(group) == other.value.end()) return true; //. "other" has zero of something that "this" has >0 of, hence "other" < "this"
         //. Both has the key
         if (this->value.at(group) < other.value.at(group)) return false;
     }
@@ -158,7 +158,7 @@ bool Cost::operator<=(const Cost &other) const {
     {
         case CostMagicFlags::MAX: return true;
         case CostMagicFlags::MIN: return (other.magic == CostMagicFlags::MIN);
-        case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" then every valid value I think
+        case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
         case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
         default: throw std::runtime_error("P10: Unsure how to handle <= for cost with lhs->magic:" + magic_to_string(this->magic));
@@ -168,7 +168,7 @@ bool Cost::operator<=(const Cost &other) const {
     {
         case CostMagicFlags::MAX: return true;
         case CostMagicFlags::MIN: return (this->magic == CostMagicFlags::MIN);
-        case CostMagicFlags::INVALID: return false; //. Invalid values were originally represented with -1, an so should be "less" then every valid value I think
+        case CostMagicFlags::INVALID: return false; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
         case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
         default: throw std::runtime_error("P10: Unsure how to handle <= for cost with rhs->magic:" + magic_to_string(other.magic));
@@ -184,8 +184,8 @@ bool Cost::operator<=(const Cost &other) const {
     }
 
     for (const auto& group : keys) { // NOTE: P10: Iterated in order of keys
-        if (this->value.find(group) == this->value.end()) return true; //. "this" has zero of somethign that "other" has >0 of, hence "this" < "other"
-        if (other.value.find(group) == other.value.end()) return false; //. "other" has zero of somethign that "this" has >0 of, hence "other" < "this"
+        if (this->value.find(group) == this->value.end()) return true; //. "this" has zero of something that "other" has >0 of, hence "this" < "other"
+        if (other.value.find(group) == other.value.end()) return false; //. "other" has zero of something that "this" has >0 of, hence "other" < "this"
         //. Both has the key
         if (this->value.at(group) > other.value.at(group)) return false;
     }
@@ -197,7 +197,7 @@ bool Cost::operator>(const Cost &other) const {
     {
         case CostMagicFlags::MAX: return !(other.magic == CostMagicFlags::MAX);
         case CostMagicFlags::MIN: return false;
-        case CostMagicFlags::INVALID: return false; //. Invalid values were originally represented with -1, an so should be "less" then every valid value I think
+        case CostMagicFlags::INVALID: return false; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
         case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
         default: throw std::runtime_error("P10: Unsure how to handle > for cost with lhs->magic:" + magic_to_string(this->magic));
@@ -207,7 +207,7 @@ bool Cost::operator>(const Cost &other) const {
     {
         case CostMagicFlags::MAX: return false;
         case CostMagicFlags::MIN: return !(this->magic == CostMagicFlags::MIN);
-        case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" then every valid value I think
+        case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
         case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
         default: throw std::runtime_error("P10: Unsure how to handle > for cost with rhs->magic:" + magic_to_string(other.magic));
@@ -223,8 +223,8 @@ bool Cost::operator>(const Cost &other) const {
     }
 
     for (const GroupID group : keys) { // NOTE: P10: Iterated in order of keys
-        if (this->value.find(group) == this->value.end()) return false; //. "this" has zero of somethign that "other" has >0 of, hence "this" < "other"
-        if (other.value.find(group) == other.value.end()) return true; //. "other" has zero of somethign that "this" has >0 of, hence "other" < "this"
+        if (this->value.find(group) == this->value.end()) return false; //. "this" has zero of something that "other" has >0 of, hence "this" < "other"
+        if (other.value.find(group) == other.value.end()) return true; //. "other" has zero of something that "this" has >0 of, hence "other" < "this"
         //. Both has the key
         if (this->value.at(group) < other.value.at(group)) return false;
     }
@@ -236,7 +236,7 @@ bool Cost::operator<(const Cost &other) const {
     {
         case CostMagicFlags::MAX: return false; //. max < nothing
         case CostMagicFlags::MIN: return !(other.magic == CostMagicFlags::MIN); //. min < (anything other than min)
-        case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" then every valid value I think
+        case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
         case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
         default: throw std::runtime_error("P10: Unsure how to handle < for cost with lhs->magic:" + magic_to_string(this->magic));
@@ -246,7 +246,7 @@ bool Cost::operator<(const Cost &other) const {
     {
         case CostMagicFlags::MAX: return !(this->magic == CostMagicFlags::MAX); //. (anything other than max) < max
         case CostMagicFlags::MIN: return false; //. nothing < min
-        case CostMagicFlags::INVALID: return false; //. Invalid values were originally represented with -1, an so should be "less" then every valid value I think
+        case CostMagicFlags::INVALID: return false; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
         case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
         default: throw std::runtime_error("P10: Unsure how to handle < for cost with rhs->magic:" + magic_to_string(other.magic));
@@ -262,8 +262,8 @@ bool Cost::operator<(const Cost &other) const {
     }
 
     for (const GroupID group : keys) { // NOTE: P10: Iterated in order of keys
-        if (this->value.find(group) == this->value.end()) return true; //. "this" has zero of somethign that "other" has >0 of, hence "this" < "other"
-        if (other.value.find(group) == other.value.end()) return false; //. "other" has zero of somethign that "this" has >0 of, hence "other" < "this"
+        if (this->value.find(group) == this->value.end()) return true; //. "this" has zero of something that "other" has >0 of, hence "this" < "other"
+        if (other.value.find(group) == other.value.end()) return false; //. "other" has zero of something that "this" has >0 of, hence "other" < "this"
         //. Both has the key
         if (this->value.at(group) > other.value.at(group)) return false;
     }
