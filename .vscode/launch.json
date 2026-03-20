@@ -24,6 +24,25 @@
           "text": "-enable-pretty-printing",
           "ignoreFailures": true,
         },
+        {
+          "description": "Skips std lib code",
+          "text": "skip -rfu ^std::",
+        },
+        {
+            "description": "Skip timer.cc",
+            "text": "skip -gfile /home/mbstarup/xDev/symk-groupings/src/search/utils/timer.cc",
+            "ignoreFailures": true,
+        },
+        // { // Skips other random files for some reason lmao
+        //     "description": "Skip cudd",
+        //     "text": "skip -gfile ext/cudd-3.0.0/*",
+        //     "ignoreFailures": true,
+        // },
+        // { // Skips other random files for some reason lmao
+        //     "description": "Skip cache",
+        //     "text": "skip -gfile /home/mbstarup/.cache/*",
+        //     "ignoreFailures": true,
+        // },
       ],
     },
   ],
