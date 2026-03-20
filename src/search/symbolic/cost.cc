@@ -11,6 +11,15 @@
 #include <memory>
 #include <set>
 
+template<typename K, typename V> V map_has(std::unordered_map<K, V> map, K key) {
+    return map.find(key) == map.end();
+}
+
+template<typename K, typename V> V map_get_or(std::unordered_map<K, V> map, K key, V default_val) {
+    if (map_has(map, key)) return default_val;
+    else return map.at(key);
+}
+
 namespace symbolic {
 
 // NOTE: P10: Hvorfor kan jeg ikke definere den her function i headeren?!?!
@@ -20,7 +29,6 @@ std::string magic_to_string(CostMagicFlags flag) {
         case NORMAL: return std::string("NORMAL");
         case EMPTY_CONSTRUCTOR: return std::string("EMPTY_CONSTRUCTOR");
         case INVALID: return std::string("INVALID");
-        case MIN: return std::string("MIN");
         case MAX: return std::string("MAX");
         default: std::cerr << "Unknown CostMagicFlags: " + std::to_string((int)flag) + ", cannot convert to string" << std::endl; assert(false);
     }
@@ -35,7 +43,7 @@ Cost::Cost(std::shared_ptr<AbstractTask> task, OperatorID op) : magic(CostMagicF
 Cost::Cost(TaskProxy task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{get_group_id(task, op), 1}}) /*value({{get_group_id(task, op), 1}})*/ {}
 
 const Cost Cost::INVALID = Cost(CostMagicFlags::INVALID);
-const Cost Cost::MIN = Cost(CostMagicFlags::MIN);
+const Cost Cost::MIN = Cost({});
 const Cost Cost::MAX = Cost(CostMagicFlags::MAX);
 
 /// @return The largest lower bound, i.e. a, where x < this -> x <= a
@@ -64,36 +72,24 @@ Cost Cost::upper_bound() {
         result.value.insert({group, val});
     }
     GroupID max_group = std::numeric_limits<GroupID>::max();
-    result.value.insert({max_group, this->value.find(max_group) == this->value.end() ? 1 : this->value.at(max_group) + 1});
+    result.value.insert({max_group, map_get_or(this->value, max_group, 0) + 1});
     return result;
 }
 
 Cost &Cost::operator+=(const Cost &other) {
-    if (this->magic == CostMagicFlags::MIN) {
-        this->magic = other.magic;
-    }
+    if (other.magic == CostMagicFlags::INVALID || this->magic == CostMagicFlags::INVALID) { throw std::runtime_error("Addition with Cost(INVALID)"); }
     for (const auto& [group, amount] : other.value) {
-        if (this->value.find(group) != this->value.end()) {
-            this->value[group] += amount;
-        } else {
-            this->value[group] = amount;
-        }
+        this->value[group] = map_get_or(this->value, group, 0) + amount;
     }
     return *this;
 }
 
 Cost &Cost::operator-=(const Cost &other) {
-    if (this->magic == CostMagicFlags::MIN) {
-        this->magic = CostMagicFlags::INVALID;
-    }
+    if (other.magic == CostMagicFlags::INVALID || this->magic == CostMagicFlags::INVALID) { throw std::runtime_error("Subtraction with Cost(INVALID)"); }
     for (const auto& [group, amount] : other.value) {
-        if (this->value.find(group) != this->value.end()) {
-            this->value[group] -= amount;
-            if (this->value[group] < 0) this->magic = CostMagicFlags::INVALID;
-        } else {
-            this->value[group] = -amount;
-            this->magic = CostMagicFlags::INVALID;
-        }
+        auto result = map_get_or(this->value, group, 0) - amount;
+        this->value[group] = result;
+        if (result < 0) this->magic = CostMagicFlags::INVALID;
     }
     return *this;
 }
@@ -118,7 +114,6 @@ bool Cost::operator>=(const Cost &other) const {
     switch (this->magic)
     {
         case CostMagicFlags::MAX: return true;
-        case CostMagicFlags::MIN: return (other.magic == CostMagicFlags::MIN);
         case CostMagicFlags::INVALID: return false; //. Invalid values were originally represented with -1, ussure if they should be equal
         case CostMagicFlags::NORMAL: break;
         case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
@@ -128,7 +123,6 @@ bool Cost::operator>=(const Cost &other) const {
     switch (other.magic)
     {
         case CostMagicFlags::MAX: return (this->magic == CostMagicFlags::MAX);
-        case CostMagicFlags::MIN: return true;
         case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
         case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
@@ -145,19 +139,20 @@ bool Cost::operator>=(const Cost &other) const {
     }
 
     for (const auto& group : keys) { // NOTE: P10: Iterated in order of keys
-        if (this->value.find(group) == this->value.end()) return false; //. "this" has zero of something that "other" has >0 of, hence "this" < "other"
-        if (other.value.find(group) == other.value.end()) return true; //. "other" has zero of something that "this" has >0 of, hence "other" < "this"
-        //. Both has the key
-        if (this->value.at(group) < other.value.at(group)) return false;
+        //. Assumes none of the values are negative (Should be INVALID, and handled above)
+        auto lhs = map_get_or(this->value, group, 0);
+        auto rhs = map_get_or(other.value, group, 0);
+        if (lhs < rhs) return false;
+        if (lhs > rhs) return true;
+        //. else, lhs == rhs, continue
     }
-    return true;
+    return true; //. they are equal
 }
 
 bool Cost::operator<=(const Cost &other) const {
     switch (this->magic)
     {
         case CostMagicFlags::MAX: return true;
-        case CostMagicFlags::MIN: return (other.magic == CostMagicFlags::MIN);
         case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
         case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
@@ -167,7 +162,6 @@ bool Cost::operator<=(const Cost &other) const {
     switch (other.magic)
     {
         case CostMagicFlags::MAX: return true;
-        case CostMagicFlags::MIN: return (this->magic == CostMagicFlags::MIN);
         case CostMagicFlags::INVALID: return false; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
         case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
@@ -184,19 +178,20 @@ bool Cost::operator<=(const Cost &other) const {
     }
 
     for (const auto& group : keys) { // NOTE: P10: Iterated in order of keys
-        if (this->value.find(group) == this->value.end()) return true; //. "this" has zero of something that "other" has >0 of, hence "this" < "other"
-        if (other.value.find(group) == other.value.end()) return false; //. "other" has zero of something that "this" has >0 of, hence "other" < "this"
-        //. Both has the key
-        if (this->value.at(group) > other.value.at(group)) return false;
+        //. Assumes none of the values are negative (Should be INVALID, and handled above)
+        auto lhs = map_get_or(this->value, group, 0);
+        auto rhs = map_get_or(other.value, group, 0);
+        if (lhs < rhs) return true;
+        if (lhs > rhs) return false;
+        //. else, lhs == rhs, continue
     }
-    return true;
+    return true; //. they are equal
 }
 
 bool Cost::operator>(const Cost &other) const {
     switch (this->magic)
     {
         case CostMagicFlags::MAX: return !(other.magic == CostMagicFlags::MAX);
-        case CostMagicFlags::MIN: return false;
         case CostMagicFlags::INVALID: return false; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
         case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
@@ -206,7 +201,6 @@ bool Cost::operator>(const Cost &other) const {
     switch (other.magic)
     {
         case CostMagicFlags::MAX: return false;
-        case CostMagicFlags::MIN: return !(this->magic == CostMagicFlags::MIN);
         case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
         case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
@@ -222,11 +216,13 @@ bool Cost::operator>(const Cost &other) const {
         keys.insert(key);
     }
 
-    for (const GroupID group : keys) { // NOTE: P10: Iterated in order of keys
-        if (this->value.find(group) == this->value.end()) return false; //. "this" has zero of something that "other" has >0 of, hence "this" < "other"
-        if (other.value.find(group) == other.value.end()) return true; //. "other" has zero of something that "this" has >0 of, hence "other" < "this"
-        //. Both has the key
-        if (this->value.at(group) < other.value.at(group)) return false;
+    for (const auto& group : keys) { // NOTE: P10: Iterated in order of keys
+        //. Assumes none of the values are negative (Should be INVALID, and handled above)
+        auto lhs = map_get_or(this->value, group, 0);
+        auto rhs = map_get_or(other.value, group, 0);
+        if (lhs < rhs) return false;
+        if (lhs > rhs) return true;
+        //. else, lhs == rhs, continue
     }
     return false; //. they are equal
 }
@@ -235,7 +231,6 @@ bool Cost::operator<(const Cost &other) const {
     switch (this->magic)
     {
         case CostMagicFlags::MAX: return false; //. max < nothing
-        case CostMagicFlags::MIN: return !(other.magic == CostMagicFlags::MIN); //. min < (anything other than min)
         case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
         case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
@@ -245,7 +240,6 @@ bool Cost::operator<(const Cost &other) const {
     switch (other.magic)
     {
         case CostMagicFlags::MAX: return !(this->magic == CostMagicFlags::MAX); //. (anything other than max) < max
-        case CostMagicFlags::MIN: return false; //. nothing < min
         case CostMagicFlags::INVALID: return false; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
         case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
@@ -261,11 +255,13 @@ bool Cost::operator<(const Cost &other) const {
         keys.insert(key);
     }
 
-    for (const GroupID group : keys) { // NOTE: P10: Iterated in order of keys
-        if (this->value.find(group) == this->value.end()) return true; //. "this" has zero of something that "other" has >0 of, hence "this" < "other"
-        if (other.value.find(group) == other.value.end()) return false; //. "other" has zero of something that "this" has >0 of, hence "other" < "this"
-        //. Both has the key
-        if (this->value.at(group) > other.value.at(group)) return false;
+    for (const auto& group : keys) { // NOTE: P10: Iterated in order of keys
+        //. Assumes none of the values are negative (Should be INVALID, and handled above)
+        auto lhs = map_get_or(this->value, group, 0);
+        auto rhs = map_get_or(other.value, group, 0);
+        if (lhs < rhs) return true;
+        if (lhs > rhs) return false;
+        //. else, lhs == rhs, continue
     }
     return false; //. they are equal
 }
@@ -299,7 +295,6 @@ std::string to_string(const Cost c) {
     {
         case CostMagicFlags::INVALID: return std::string("Cost(INVALID)");
         case CostMagicFlags::MAX: return std::string("Cost(MAX)");
-        case CostMagicFlags::MIN: return std::string("Cost(MIN)");
         default: break;
     }
 

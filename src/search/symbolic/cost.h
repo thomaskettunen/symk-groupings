@@ -31,7 +31,6 @@ namespace symbolic {
         NORMAL,
         EMPTY_CONSTRUCTOR,
         INVALID,
-        MIN,
         MAX,
     };
 
