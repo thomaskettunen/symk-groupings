@@ -34,16 +34,13 @@ std::string magic_to_string(CostMagicFlags flag) {
     }
 };
 
-Cost::Cost() : magic(CostMagicFlags::EMPTY_CONSTRUCTOR), value() {};
-Cost::Cost(CostMagicFlags flag) : magic(flag) {};
-Cost::Cost(std::shared_ptr<AbstractTask> task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{get_group_id(TaskProxy(*task), op), 1}}) {} //P10 converted to TaskProxy because it was easier than the other way or doing overloading
-
-// TODO: P10: Fake all operators in group 0 for now
-//. We probably need to unify the whole std::shared_ptr<AbstracTast> vs TaskProxy dichotomy
+Cost::Cost() : magic(CostMagicFlags::EMPTY_CONSTRUCTOR), sum(0), value() {};
+Cost::Cost(CostMagicFlags flag) : sum(-1), magic(flag) {};
+Cost::Cost(std::shared_ptr<AbstractTask> task, OperatorID op) : sum(1), magic(CostMagicFlags::NORMAL), value({{get_group_id(TaskProxy(*task), op), 1}}) {}
 Cost::Cost(TaskProxy task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{get_group_id(task, op), 1}}) /*value({{get_group_id(task, op), 1}})*/ {}
 
 const Cost Cost::INVALID = Cost(CostMagicFlags::INVALID);
-const Cost Cost::MIN = Cost({});
+const Cost Cost::MIN = Cost();
 const Cost Cost::MAX = Cost(CostMagicFlags::MAX);
 
 /// @return The largest lower bound, i.e. a, where x < this -> x <= a
@@ -81,6 +78,7 @@ Cost &Cost::operator+=(const Cost &other) {
     for (const auto& [group, amount] : other.value) {
         this->value[group] = map_get_or(this->value, group, 0) + amount;
     }
+    this->sum += other.sum;
     return *this;
 }
 
@@ -91,6 +89,7 @@ Cost &Cost::operator-=(const Cost &other) {
         this->value[group] = result;
         if (result < 0) this->magic = CostMagicFlags::INVALID;
     }
+    this->sum -= other.sum;
     return *this;
 }
 
@@ -128,6 +127,9 @@ bool Cost::operator>=(const Cost &other) const {
         case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
         default: throw std::runtime_error("P10: Unsure how to handle >= for cost with rhs->magic:" + magic_to_string(other.magic));
     }
+
+    if(this->sum < other.sum) return false;
+    if(this->sum > other.sum) return true;
 
     // NOTE: P10: Assumes the keys are ordereable
     std::set<GroupID> keys;
@@ -168,6 +170,9 @@ bool Cost::operator<=(const Cost &other) const {
         default: throw std::runtime_error("P10: Unsure how to handle <= for cost with rhs->magic:" + magic_to_string(other.magic));
     }
 
+    if(this->sum < other.sum) return true;
+    if(this->sum > other.sum) return false;
+
     // NOTE: P10: Assumes the keys are ordereable
     std::set<GroupID> keys;
     for(auto &[key, _] : this->value) {
@@ -207,6 +212,9 @@ bool Cost::operator>(const Cost &other) const {
         default: throw std::runtime_error("P10: Unsure how to handle > for cost with rhs->magic:" + magic_to_string(other.magic));
     }
 
+    if(this->sum < other.sum) return false;
+    if(this->sum > other.sum) return true;
+
     // NOTE: P10: Assumes the keys are ordereable
     std::set<GroupID> keys;
     for(auto &[key, _] : this->value) {
@@ -245,6 +253,9 @@ bool Cost::operator<(const Cost &other) const {
         case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
         default: throw std::runtime_error("P10: Unsure how to handle < for cost with rhs->magic:" + magic_to_string(other.magic));
     }
+
+    if(this->sum < other.sum) return true;
+    if(this->sum > other.sum) return false;
 
     // NOTE: P10: Assumes the keys are ordereable
     std::set<GroupID> keys;
@@ -300,10 +311,10 @@ std::string to_string(const Cost c) {
 
     std::string outputString = "";
     for (const auto& [group, amount] : c.value) {
-        outputString += "{" + std::to_string(group) + ": " + std::to_string(amount) + "},";
+        outputString += "{(" + std::to_string(group) + ") " + Cost::get_group_name(group) + ": " + std::to_string(amount) + "},";
     }
     
-    return "Cost(" + outputString + ")";
+    return "Cost[" + std::to_string(c.sum) + "](" + outputString + ")";
 }
 
 std::ostream &operator<<(std::ostream &os, const Cost &c) {
@@ -349,7 +360,7 @@ GroupID Cost::get_group_id(const TaskProxy task, OperatorID op_id) {
 
     // todo grouping on specific words
 
-    auto op_name = task.get_operators()[op_id.get_index()].get_name(); //P10 unsure if this is actually the name we will get 
+    auto op_name = task.get_operators()[op_id.get_index()].get_name(); //P10 unsure if this is actually the name we will get
     auto group_name = op_name_to_group_name(op_name, prefixSize, words);
     GroupID group_id;
     auto it = Cost::group_name_to_group_id.find(group_name);
