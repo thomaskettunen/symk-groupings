@@ -32,6 +32,18 @@ symbolic::Cost OpenList::minNextG(const Frontier &frontier, symbolic::Cost min_a
 void OpenList::pop(Frontier &frontier) {
     assert(frontier.empty());
     symbolic::Cost g = open.begin()->first;
+
+    symbolic::Cost thingy({{0, 99},{1, 99},{2, 99}}); // TODO: P10: we should use paretto set here below
+
+    while(g >= thingy){ // check if dominated
+
+        open.erase(g);
+
+        if(open.empty()) return;
+
+        g = open.begin()->first;
+    }
+
     frontier.set(g, open.begin()->second);
     open.erase(g);
 }

@@ -29,7 +29,6 @@ using GroupID = int;
 namespace symbolic {
     enum CostMagicFlags {
         NORMAL,
-        EMPTY_CONSTRUCTOR,
         INVALID,
         MAX,
     };
@@ -38,8 +37,8 @@ namespace symbolic {
 
     class Cost {
         public:
-            explicit Cost();
-            explicit Cost(CostMagicFlags);
+            explicit Cost(std::unordered_map<GroupID, int> map);
+            explicit Cost() = delete;
             Cost(std::shared_ptr<AbstractTask> task, OperatorID op);
             Cost(TaskProxy task, OperatorID op);
 
@@ -70,6 +69,8 @@ namespace symbolic {
             // friend std::size_t std::hash<Cost>::operator()(const Cost& cost) const;
 
         private:
+            explicit Cost(CostMagicFlags);
+
             static std::string get_group_name(int group_no);
             static std::unordered_map<std::string, int> group_name_to_group_id;
             GroupID get_group_id(const TaskProxy task, OperatorID op_id);

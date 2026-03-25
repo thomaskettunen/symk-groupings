@@ -24,7 +24,8 @@ UniformCostSearch::UniformCostSearch(
       fw(true),
       step_estimation(0, 0, false),
       closed(make_shared<ClosedList>()),
-      lastStepCost(true) {
+      lastStepCost(true),
+      last_g_cost(Cost::MIN) {
 }
 
 bool UniformCostSearch::init(
@@ -89,6 +90,12 @@ bool UniformCostSearch::prepareBucket() {
         }
         open_list.pop(frontier);
         last_g_cost = frontier.g();
+
+        if(frontier.empty()){ // NOTE: P10: hacky solution to stopping when frontier is empty do not forge
+            engine->setLowerBound(Cost::MAX);
+            return true;
+        }
+
         assert(!frontier.empty() || frontier.g() == Cost::MAX);
         checkFrontierCut(frontier.bucket(), frontier.g());
 

@@ -27,20 +27,25 @@ std::string magic_to_string(CostMagicFlags flag) {
     switch (flag)
     {
         case NORMAL: return std::string("NORMAL");
-        case EMPTY_CONSTRUCTOR: return std::string("EMPTY_CONSTRUCTOR");
         case INVALID: return std::string("INVALID");
         case MAX: return std::string("MAX");
         default: std::cerr << "Unknown CostMagicFlags: " + std::to_string((int)flag) + ", cannot convert to string" << std::endl; assert(false);
     }
 };
 
-Cost::Cost() : magic(CostMagicFlags::EMPTY_CONSTRUCTOR), sum(0), value() {};
-Cost::Cost(CostMagicFlags flag) : sum(-1), magic(flag) {};
-Cost::Cost(std::shared_ptr<AbstractTask> task, OperatorID op) : sum(1), magic(CostMagicFlags::NORMAL), value({{get_group_id(TaskProxy(*task), op), 1}}) {}
-Cost::Cost(TaskProxy task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{get_group_id(task, op), 1}}) /*value({{get_group_id(task, op), 1}})*/ {}
+Cost::Cost(CostMagicFlags flag) : magic(flag), sum(-1) {
+}
+Cost::Cost(std::unordered_map<GroupID, int> map) : magic(CostMagicFlags::NORMAL), value(map) {
+    this->sum = 0;
+    for(const auto& [key, value] : map){
+        this->sum += value;
+    }
+}
+Cost::Cost(std::shared_ptr<AbstractTask> task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{get_group_id(TaskProxy(*task), op), 1}}), sum(1) {}
+Cost::Cost(TaskProxy task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{get_group_id(task, op), 1}}), sum(1) {}
 
 const Cost Cost::INVALID = Cost(CostMagicFlags::INVALID);
-const Cost Cost::MIN = Cost();
+const Cost Cost::MIN = Cost(std::unordered_map<GroupID, int>());
 const Cost Cost::MAX = Cost(CostMagicFlags::MAX);
 
 /// @return The largest lower bound, i.e. a, where x < this -> x <= a
@@ -51,7 +56,7 @@ Cost Cost::lower_bound() {
         keys.insert(key);
     }
     
-    Cost result;
+    Cost result = Cost::MIN;
     int remaining = keys.size();
     for (const GroupID group : keys) { // NOTE: P10: Iterated in order of keys
         --remaining;
@@ -64,7 +69,7 @@ Cost Cost::lower_bound() {
 
 /// @return The smallest upper bound, i.e. a, where x > this -> x >= a
 Cost Cost::upper_bound() {
-    Cost result;
+    Cost result = Cost::MIN;
     for (const auto &[group, val] : this->value) { // NOTE: P10: Is there a "right" way to copy this?
         result.value.insert({group, val});
     }
@@ -78,6 +83,7 @@ Cost &Cost::operator+=(const Cost &other) {
     for (const auto& [group, amount] : other.value) {
         this->value[group] = map_get_or(this->value, group, 0) + amount;
     }
+    
     this->sum += other.sum;
     return *this;
 }
@@ -89,6 +95,7 @@ Cost &Cost::operator-=(const Cost &other) {
         this->value[group] = result;
         if (result < 0) this->magic = CostMagicFlags::INVALID;
     }
+    
     this->sum -= other.sum;
     return *this;
 }
@@ -115,7 +122,6 @@ bool Cost::operator>=(const Cost &other) const {
         case CostMagicFlags::MAX: return true;
         case CostMagicFlags::INVALID: return false; //. Invalid values were originally represented with -1, ussure if they should be equal
         case CostMagicFlags::NORMAL: break;
-        case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
         default: throw std::runtime_error("P10: Unsure how to handle >= for cost with lhs->magic:" + magic_to_string(this->magic));
     }
 
@@ -124,7 +130,6 @@ bool Cost::operator>=(const Cost &other) const {
         case CostMagicFlags::MAX: return (this->magic == CostMagicFlags::MAX);
         case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
-        case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
         default: throw std::runtime_error("P10: Unsure how to handle >= for cost with rhs->magic:" + magic_to_string(other.magic));
     }
 
@@ -157,7 +162,6 @@ bool Cost::operator<=(const Cost &other) const {
         case CostMagicFlags::MAX: return true;
         case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
-        case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
         default: throw std::runtime_error("P10: Unsure how to handle <= for cost with lhs->magic:" + magic_to_string(this->magic));
     }
 
@@ -166,7 +170,6 @@ bool Cost::operator<=(const Cost &other) const {
         case CostMagicFlags::MAX: return true;
         case CostMagicFlags::INVALID: return false; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
-        case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
         default: throw std::runtime_error("P10: Unsure how to handle <= for cost with rhs->magic:" + magic_to_string(other.magic));
     }
 
@@ -199,7 +202,6 @@ bool Cost::operator>(const Cost &other) const {
         case CostMagicFlags::MAX: return !(other.magic == CostMagicFlags::MAX);
         case CostMagicFlags::INVALID: return false; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
-        case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
         default: throw std::runtime_error("P10: Unsure how to handle > for cost with lhs->magic:" + magic_to_string(this->magic));
     }
 
@@ -208,7 +210,6 @@ bool Cost::operator>(const Cost &other) const {
         case CostMagicFlags::MAX: return false;
         case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
-        case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
         default: throw std::runtime_error("P10: Unsure how to handle > for cost with rhs->magic:" + magic_to_string(other.magic));
     }
 
@@ -241,7 +242,6 @@ bool Cost::operator<(const Cost &other) const {
         case CostMagicFlags::MAX: return false; //. max < nothing
         case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
-        case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
         default: throw std::runtime_error("P10: Unsure how to handle < for cost with lhs->magic:" + magic_to_string(this->magic));
     }
 
@@ -250,7 +250,6 @@ bool Cost::operator<(const Cost &other) const {
         case CostMagicFlags::MAX: return !(this->magic == CostMagicFlags::MAX); //. (anything other than max) < max
         case CostMagicFlags::INVALID: return false; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
         case CostMagicFlags::NORMAL: break;
-        case CostMagicFlags::EMPTY_CONSTRUCTOR: break;
         default: throw std::runtime_error("P10: Unsure how to handle < for cost with rhs->magic:" + magic_to_string(other.magic));
     }
 
@@ -294,7 +293,7 @@ Cost Cost::max(Cost first, Cost second) {
 }
 
 Cost Cost::plan_cost(const Plan &plan, const TaskProxy &task) {
-    Cost plan_cost = Cost();
+    Cost plan_cost = Cost::MIN;
     for (OperatorID op_id : plan) {
         plan_cost += Cost(task, op_id);
     }

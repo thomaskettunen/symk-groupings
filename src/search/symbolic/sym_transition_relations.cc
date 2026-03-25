@@ -15,7 +15,7 @@ using namespace std;
 namespace symbolic {
 SymTransitionRelations::SymTransitionRelations(
     SymVariables *sym_vars, const SymParameters &sym_params)
-    : sym_vars(sym_vars), sym_params(sym_params) {
+    : sym_vars(sym_vars), sym_params(sym_params), min_transition_cost(Cost::MIN) { // TODO: P10: should probably not be a min
 }
 
 void SymTransitionRelations::init(

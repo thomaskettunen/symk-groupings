@@ -23,7 +23,7 @@ class OpenList {
 
 public:
     bool empty() const {
-        assert(open.empty() || !open.begin()->second.empty());
+        assert(open.empty() || !open.begin()->second.empty()); // NOTE: P10: david speck please explain why are we checking if it is empty then crash? hello?
         return open.empty();
     }
 

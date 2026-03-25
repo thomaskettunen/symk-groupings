@@ -72,14 +72,14 @@ void SymSolutionRegistry::reconstruct_plans(
                 sym_vars->numStates(cur_node.get_visitied_states()));
 
         // Check if we have found a solution with this cut
-        if (is_solution(cur_node)) {
+        if (is_solution(cur_node)) { // NOTE: P10: Here we check if the current node we are looking at is a solution, maybe checking if not dominated here would result in getting the plans we want
             Plan cur_plan;
-            cur_node.get_plan(cur_plan);
+            cur_node.get_plan(cur_plan); // we get the current plan for the node we are looking for
             add_plan(cur_plan);
 
             // Plan data base tells us if we need to continue
             // We can stop early if we, e.g., have found enough plans
-            if (!plan_data_base->reconstruct_solutions(sym_cuts[0].get_f())) {
+            if (!plan_data_base->reconstruct_solutions(sym_cuts[0].get_f())) { // NOTE: P10: does this reconstruct from the same node we have just come from?
                 queue = ReconstructionQueue(CompareReconstructionNodes(
                     ReconstructionPriority::REMAINING_COST));
                 return;
@@ -98,7 +98,7 @@ void SymSolutionRegistry::reconstruct_plans(
 
 void SymSolutionRegistry::expand_actions(const ReconstructionNode &node) {
     bool fwd = node.is_fwd_phase();
-    Cost cur_cost;
+    Cost cur_cost = Cost::MIN; // NOTE: P10: Uninitialized is what it should be haha
     shared_ptr<ClosedList> cur_closed_list;
 
     if (fwd) {
