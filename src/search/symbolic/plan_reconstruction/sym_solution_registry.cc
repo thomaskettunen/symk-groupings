@@ -4,6 +4,8 @@
 
 #include "../cost.h"
 
+#include "../found_plans.h"
+
 using namespace std;
 
 namespace symbolic {
@@ -35,8 +37,17 @@ void SymSolutionRegistry::reconstruct_plans(
         }
     }
 
+    symbolic::Cost thePrice = queue.top().get_f();
+
+    if(found_plans::global_instance.is_dominated(thePrice)){
+        std::cout << "dominated " << thePrice << std::endl;
+    }
+    std::cout << "not dominated " << thePrice << std::endl;  
+    found_plans::global_instance.paretto_frontier.insert(thePrice); // NOTE: P10: we get the total price for the current plan we want
+    // NOTE: P10: the queue for some reason finds all possible reorderings, where the hell does it do this
+
     // While queue is not empty
-    while (!queue.empty()) {
+    while (!queue.empty()) { // for some reason the queue counts down until it reaches the cost[0,0,0] ??? and none of these will ever be dominated obviously
         ReconstructionNode cur_node = queue.top();
         queue.pop();
 
@@ -73,13 +84,14 @@ void SymSolutionRegistry::reconstruct_plans(
 
         // Check if we have found a solution with this cut
         if (is_solution(cur_node)) { // NOTE: P10: Here we check if the current node we are looking at is a solution, maybe checking if not dominated here would result in getting the plans we want
+            
             Plan cur_plan;
             cur_node.get_plan(cur_plan); // we get the current plan for the node we are looking for
             add_plan(cur_plan);
 
             // Plan data base tells us if we need to continue
             // We can stop early if we, e.g., have found enough plans
-            if (!plan_data_base->reconstruct_solutions(sym_cuts[0].get_f())) { // NOTE: P10: does this reconstruct from the same node we have just come from?
+            if (!plan_data_base->reconstruct_solutions(sym_cuts[0].get_f())) { // NOTE: P10: at this point the first plan has already been found
                 queue = ReconstructionQueue(CompareReconstructionNodes(
                     ReconstructionPriority::REMAINING_COST));
                 return;
@@ -90,8 +102,10 @@ void SymSolutionRegistry::reconstruct_plans(
             if (justified_solutions()) {
                 continue;
             }
+            return; // NOTE: P10: this return probably shouldnt be here and we should instead check for other ways to break out of here
+            // NOTE: P10: with the above return we always end up with only one plan and never come in here again
         }
-        expand_actions(cur_node);
+        expand_actions(cur_node); // NOTE: P10: this is obviously important somehow 
     }
     assert(queue.empty());
 }
@@ -175,14 +189,19 @@ void SymSolutionRegistry::expand_actions(const ReconstructionNode &node) {
                 if (simple_solutions()) {
                     bw_node.add_visited_states(fw_closed->get_start_states());
                 }
-
-                queue.push(bw_node);
+                if (!found_plans::global_instance.is_dominated(bw_node.get_f())) {
+                    queue.push(bw_node);
+                }
 
                 if (task_has_zero_costs() && no_pruning()) {
-                    queue.push(new_node);
+                    if (!found_plans::global_instance.is_dominated(new_node.get_f())) {
+                        queue.push(new_node);
+                    }
                 }
             } else {
-                queue.push(new_node);
+                if (!found_plans::global_instance.is_dominated(new_node.get_f())) {
+                    queue.push(new_node);
+                }
             }
 
             // A single solution and we made progress
