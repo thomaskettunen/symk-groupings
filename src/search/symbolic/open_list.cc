@@ -6,6 +6,9 @@
 
 #include "cost.h"
 
+#include "found_plans.h"
+
+
 using namespace std;
 
 namespace symbolic {
