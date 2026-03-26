@@ -36,9 +36,10 @@ void OpenList::pop(Frontier &frontier) {
     assert(frontier.empty());
     symbolic::Cost g = open.begin()->first;
 
-    symbolic::Cost thingy({{0, 99},{1, 99},{2, 99}}); // TODO: P10: we should use paretto set here below
+    
+    // found_plans::global_instance.paretto_frontier.insert(g);
 
-    while(g >= thingy){ // check if dominated
+    while(found_plans::global_instance.is_dominated(g)){ 
 
         open.erase(g);
 
