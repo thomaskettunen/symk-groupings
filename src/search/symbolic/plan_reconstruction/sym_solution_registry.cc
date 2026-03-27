@@ -39,14 +39,16 @@ void SymSolutionRegistry::reconstruct_plans( // NOTE: P10: When this is called w
         }
     }
 
-    symbolic::Cost thePrice = queue.top().get_f();
-
-    if(found_plans::global_instance.is_dominated(thePrice)){
-        std::cout << "dominated " << thePrice << std::endl;
+    if (!queue.empty()) {
+        symbolic::Cost thePrice = queue.top().get_f();
+        
+        if(found_plans::global_instance.is_dominated(thePrice)){
+            std::cout << "dominated " << thePrice << std::endl;
+        }
+        std::cout << "not dominated " << thePrice << std::endl;  
+        found_plans::global_instance.paretto_frontier.insert(thePrice); // NOTE: P10: we get the total price for the current plan we want
+        // NOTE: P10: the queue for some reason finds all possible reorderings, where the hell does it do this
     }
-    std::cout << "not dominated " << thePrice << std::endl;  
-    found_plans::global_instance.paretto_frontier.insert(thePrice); // NOTE: P10: we get the total price for the current plan we want
-    // NOTE: P10: the queue for some reason finds all possible reorderings, where the hell does it do this
 
     // While queue is not empty
     while (!queue.empty()) { // for some reason the queue counts down until it reaches the cost[0,0,0] ??? and none of these will ever be dominated obviously
@@ -101,9 +103,9 @@ void SymSolutionRegistry::reconstruct_plans( // NOTE: P10: When this is called w
 
             // Not necessary to with this plan since it can only lead to
             // unjustified plans
-            if (justified_solutions()) {
-                continue;
-            }
+            if (justified_solutions()) continue;
+            
+            queue = ReconstructionQueue(CompareReconstructionNodes(ReconstructionPriority::REMAINING_COST));
             return; // NOTE: P10: this return probably shouldnt be here and we should instead check for other ways to break out of here
             // NOTE: P10: with the above return we always end up with only one plan and never come in here again
         }
