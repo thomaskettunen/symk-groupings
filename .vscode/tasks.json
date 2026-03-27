@@ -30,13 +30,13 @@
       "id": "domainFile",
       "type": "promptString",
       "description": "Enter path to domain PDDL file",
-      "default": "../benchmarks/gripper/domain.pddl",
+      "default": "../benchmarks/blocks/domain.pddl",
     },
     {
       "id": "problemFile",
       "type": "promptString",
       "description": "Enter path to problem PDDL file",
-      "default": "../benchmarks/gripper/prob03.pddl",
+      "default": "../benchmarks/blocks/probBLOCKS-5-0.pddl",
     },
   ],
 }
