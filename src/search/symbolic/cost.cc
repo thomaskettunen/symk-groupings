@@ -284,6 +284,34 @@ bool Cost::operator!=(const Cost &other) const {
     return !(*this == other);
 }
 
+bool Cost::dominates(const Cost &other) const {
+    switch (this->magic)
+    {
+        case CostMagicFlags::MAX: return true;
+        case CostMagicFlags::NORMAL: break;
+        default: throw std::runtime_error("P10: Unsure how to handle <= for cost with lhs->magic:" + magic_to_string(this->magic));
+    }
+
+    switch (other.magic)
+    {
+        case CostMagicFlags::MAX: return true;
+        case CostMagicFlags::NORMAL: break;
+        default: throw std::runtime_error("P10: Unsure how to handle <= for cost with rhs->magic:" + magic_to_string(other.magic));
+    }
+
+    for (const auto& [group, lhs] : this->value) { //. Iterate lhs's (this's) keys
+        //. Assumes none of the values are negative (Should be INVALID, and handled above)
+        auto rhs = map_get_or(other.value, group, 0);
+        if (rhs < lhs) return false; //. for some index, rhs is better (smaller) than lhs, so therefore lhs does NOT dominate rhs
+    }
+    for (const auto& [group, rhs] : other.value) { //. Iterate rhs's (other's) keys
+        //. Assumes none of the values are negative (Should be INVALID, and handled above)
+        auto lhs = map_get_or(this->value, group, 0);
+        if (rhs < lhs) return false; //. for some index, rhs is better (smaller) than lhs, so therefore lhs does NOT dominate rhs
+    }
+    return true; //. there are none that are larger in the lhs
+}
+
 Cost Cost::min(Cost first, Cost second) {
     return first < second ? first : second;
 }

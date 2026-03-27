@@ -59,7 +59,8 @@ namespace symbolic {
             bool operator<(const Cost &other) const;
             bool operator==(const Cost &other) const;
             bool operator!=(const Cost &other) const;
-
+            bool dominates(const Cost &other) const;
+            
             static Cost min(Cost first, Cost second);
             static Cost max(Cost first, Cost second);
             static Cost plan_cost(const Plan &plan, const TaskProxy &task_proxy);

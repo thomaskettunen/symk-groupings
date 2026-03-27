@@ -2,19 +2,16 @@
 
 namespace found_plans
 {
-  found_plans::found_plans() {}
+  found_plans::found_plans() { std::cout << "THIS SHOULD ONLY APPEAR ONCE" << std::endl; }
 
   bool found_plans::is_dominated(symbolic::Cost g) {
-    for (auto cost : this->paretto_frontier){
-
-      std::cout << "this may be dominated:\n" << g << "\n" << cost << std::endl;
-      if(g >= cost){
-        std::cout << "dominated" << std::endl;
-      }else{
-        std::cout << "not dominated" << std::endl;
+    for (auto cost : this->paretto_frontier) {
+      if (cost.dominates(g)) {
+        std::cout << g << " is dominated by " << cost << std::endl;
+        return true;
+      } else {
+        std::cout << g << " is NOT dominated by " << cost << std::endl;
       }
-
-      if(g >= cost) return true;
     }
     return false;
   };
