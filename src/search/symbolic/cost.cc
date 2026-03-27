@@ -284,6 +284,43 @@ bool Cost::operator!=(const Cost &other) const {
     return !(*this == other);
 }
 
+bool Cost::dominates(const Cost &other) const {
+    switch (this->magic)
+    {
+        case CostMagicFlags::MAX: return true;
+        case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
+        case CostMagicFlags::NORMAL: break;
+        default: throw std::runtime_error("P10: Unsure how to handle <= for cost with lhs->magic:" + magic_to_string(this->magic));
+    }
+
+    switch (other.magic)
+    {
+        case CostMagicFlags::MAX: return true;
+        case CostMagicFlags::INVALID: return false; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
+        case CostMagicFlags::NORMAL: break;
+        default: throw std::runtime_error("P10: Unsure how to handle <= for cost with rhs->magic:" + magic_to_string(other.magic));
+    }
+
+    // NOTE: P10: Assumes the keys are ordereable
+    std::set<GroupID> keys;
+    for(auto &[key, _] : this->value) {
+        keys.insert(key);
+    }
+    for(auto &[key, _] : other.value) {
+        keys.insert(key);
+    }
+
+    for (const auto& group : keys) { // NOTE: P10: Iterated in order of keys
+        //. Assumes none of the values are negative (Should be INVALID, and handled above)
+        auto lhs = map_get_or(this->value, group, 0);
+        auto rhs = map_get_or(other.value, group, 0);
+        if (lhs < rhs) return true;
+        if (lhs > rhs) return false;
+        //. else, lhs == rhs, continue
+    }
+    return true; //. they are equal
+}
+
 Cost Cost::min(Cost first, Cost second) {
     return first < second ? first : second;
 }
