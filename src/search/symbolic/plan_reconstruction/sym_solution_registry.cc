@@ -9,18 +9,20 @@
 using namespace std;
 
 namespace symbolic {
-void SymSolutionRegistry::add_plan(const Plan &plan) const {
+void SymSolutionRegistry::add_plan(const Plan &plan) const { 
     assert(!(simple_solutions() && plan_data_base->has_zero_cost_loop(plan)));
     plan_data_base->add_plan(plan);
 }
 
-void SymSolutionRegistry::reconstruct_plans(
+void SymSolutionRegistry::reconstruct_plans( // NOTE: P10: When this is called we already know what some plan cost is
     const vector<SymSolutionCut> &sym_cuts) {
     assert(queue.empty());
 
     for (const SymSolutionCut &sym_cut : sym_cuts) {
         assert(fw_closed || sym_cut.get_g() == Cost::MIN);
         assert(bw_closed || sym_cut.get_h() == Cost::MIN);
+
+        if(found_plans::global_instance.is_dominated(sym_cut.get_f())) continue; // NOTE: P10: if the current plan is dominated we should just not even push it to the queue
 
         ReconstructionNode cur_node(
             sym_cut.get_g(), sym_cut.get_h(), std::numeric_limits<int>::max(),
@@ -290,15 +292,16 @@ void SymSolutionRegistry::register_solution(const SymSolutionCut &solution) {
     }
 }
 
-void SymSolutionRegistry::construct_cheaper_solutions(Cost bound) {
+void SymSolutionRegistry::construct_cheaper_solutions(Cost bound) { // NOTE: P10: when this function is called we have a correct plan
     for (const auto &key : sym_cuts) {
+        std::cout << "guess who is back: " << key.first << std::endl;
         Cost plan_cost = key.first;
         const vector<SymSolutionCut> &cuts = key.second;
         if (plan_cost >= bound || found_all_plans())
             break;
 
         reconstruction_timer.resume();
-        reconstruct_plans(cuts);
+        reconstruct_plans(cuts); // NOTE: P10: when is is called only a plan of cost 23 exists for gripper03 in sym_cuts
         reconstruction_timer.stop();
     }
 

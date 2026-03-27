@@ -10,6 +10,8 @@
 #include "../searches/top_k_uniform_cost_search.h"
 #include "../searches/uniform_cost_search.h"
 
+#include "../found_plans.h"
+
 using namespace std;
 using namespace options;
 
@@ -23,7 +25,7 @@ SymbolicSearch::SymbolicSearch(const plugins::Options &opts)
       sym_params(opts, task),
       step_num(-1),
       lower_bound_increased(true),
-      lower_bound(Cost::MIN),
+      lower_bound(Cost::MIN), // NOTE: P10: The lower bound is the cost that is used to check if we have hit a cut
       upper_bound(Cost::MAX), // TODO: P10: Here we also ignore bound and just set it to max, make sure it doesn't fuck us
       min_g(Cost::MIN),
       plan_data_base(opts.get<shared_ptr<PlanSelector>>("plan_selection")),
@@ -87,8 +89,8 @@ SearchStatus SymbolicSearch::step() {
         cur_status = solution_found ? SOLVED : FAILED;
     } else {
         // Bound increased => construct plans
-        if (lower_bound_increased) {
-            solution_registry->construct_cheaper_solutions(lower_bound);
+        if (lower_bound_increased && !found_plans::global_instance.is_dominated(lower_bound)) { // NOTE: P10: making sure the lower bound is also not dominated. may be it is slow to do this here but whatever
+            solution_registry->construct_cheaper_solutions(lower_bound); // NOTE: P10: When this is called the lower_bound is equal to the cost of the cheapest plan
         }
 
         // All plans found
