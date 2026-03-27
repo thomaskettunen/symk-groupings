@@ -38,16 +38,12 @@ void OpenList::pop(Frontier &frontier) {
 
     
     // found_plans::global_instance.paretto_frontier.insert(g);
-    /*
-    while(found_plans::global_instance.is_dominated(g)){ 
+    // while (found_plans::global_instance.is_dominated(g)) {
+    //     open.erase(g);
+    //     if(open.empty()) return;
+    //     g = open.begin()->first;
+    // }
 
-        open.erase(g);
-
-        if(open.empty()) return;
-
-        g = open.begin()->first;
-    }
-    */
     frontier.set(g, open.begin()->second);
     open.erase(g);
 }

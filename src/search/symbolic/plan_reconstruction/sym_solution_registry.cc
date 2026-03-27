@@ -42,7 +42,7 @@ void SymSolutionRegistry::reconstruct_plans( // NOTE: P10: When this is called w
     if (!queue.empty()) {
         symbolic::Cost thePrice = queue.top().get_f();
         
-        if(found_plans::global_instance.is_dominated(thePrice)){
+        if (found_plans::global_instance.is_dominated(thePrice)) {
             std::cout << "dominated " << thePrice << std::endl;
         }
         std::cout << "not dominated " << thePrice << std::endl;  
@@ -51,7 +51,7 @@ void SymSolutionRegistry::reconstruct_plans( // NOTE: P10: When this is called w
     }
 
     // While queue is not empty
-    while (!queue.empty()) { // for some reason the queue counts down until it reaches the cost[0,0,0] ??? and none of these will ever be dominated obviously
+    while (!queue.empty()) { // NOTE: P10: for some reason the queue counts down until it reaches the cost[0,0,0] ??? and none of these will ever be dominated obviously
         ReconstructionNode cur_node = queue.top();
         queue.pop();
 
@@ -78,17 +78,11 @@ void SymSolutionRegistry::reconstruct_plans( // NOTE: P10: When this is called w
         // utils::g_log << cur_node << endl;
 
         assert(sym_vars->numStates(cur_node.get_states()) > 0);
-        assert(
-            !simple_solutions() ||
-            sym_vars->numStates(cur_node.get_states()) == 1);
-        assert(
-            !simple_solutions() ||
-            cur_node.get_plan_length() + 1 ==
-                sym_vars->numStates(cur_node.get_visitied_states()));
+        assert(!simple_solutions() || sym_vars->numStates(cur_node.get_states()) == 1);
+        assert(!simple_solutions() || cur_node.get_plan_length() + 1 == sym_vars->numStates(cur_node.get_visitied_states()));
 
         // Check if we have found a solution with this cut
         if (is_solution(cur_node)) { // NOTE: P10: Here we check if the current node we are looking at is a solution, maybe checking if not dominated here would result in getting the plans we want
-            
             Plan cur_plan;
             cur_node.get_plan(cur_plan); // we get the current plan for the node we are looking for
             add_plan(cur_plan);
@@ -96,8 +90,7 @@ void SymSolutionRegistry::reconstruct_plans( // NOTE: P10: When this is called w
             // Plan data base tells us if we need to continue
             // We can stop early if we, e.g., have found enough plans
             if (!plan_data_base->reconstruct_solutions(sym_cuts[0].get_f())) { // NOTE: P10: at this point the first plan has already been found
-                queue = ReconstructionQueue(CompareReconstructionNodes(
-                    ReconstructionPriority::REMAINING_COST));
+                queue = ReconstructionQueue(CompareReconstructionNodes(ReconstructionPriority::REMAINING_COST));
                 return;
             }
 
