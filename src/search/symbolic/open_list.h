@@ -12,6 +12,7 @@
 namespace symbolic {
 class SymStateSpaceManager;
 class Frontier;
+class ClosedList;
 
 class OpenList {
     std::map<symbolic::Cost, Bucket> open; // States in open with unkwown h-value
@@ -27,8 +28,8 @@ public:
         return open.empty();
     }
 
-    void insert(const Bucket &bucket, symbolic::Cost g);
-    void insert(const BDD &bdd, symbolic::Cost g);
+    void insert(const Bucket &bucket, symbolic::Cost g, std::shared_ptr<ClosedList> closed);
+    void insert(const BDD &bdd, symbolic::Cost g, std::shared_ptr<ClosedList> closed);
 
     Cost minG() const;
 
