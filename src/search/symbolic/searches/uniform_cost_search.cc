@@ -164,7 +164,7 @@ void UniformCostSearch::stepImage(int maxTime, int maxNodes) {
                 for (auto &bdd : pairCostBDDs.second) {
                     if (!bdd.IsZero()) {
                         stepNodes = max(stepNodes, bdd.nodeCount());
-                        open_list.insert(bdd, cost);
+                        open_list.insert(bdd, cost, closed);
                     }
                 }
             }
