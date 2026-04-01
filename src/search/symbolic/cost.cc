@@ -337,11 +337,23 @@ std::string to_string(const Cost c) {
     }
 
     std::string outputString = "";
-    for (const auto& [group, amount] : c.value) {
-        outputString += "{(" + std::to_string(group) + ") " + Cost::get_group_name(group) + ": " + std::to_string(amount) + "},";
+
+    std::set<GroupID> ids;
+    for(auto &[name, id] : Cost::group_name_to_group_id) {
+        ids.insert(id);
     }
-    
-    return "Cost[" + std::to_string(c.sum) + "](" + outputString + ")";
+
+#define SHORT_PRINT
+
+    for (auto &group : ids) {
+        int amount = map_get_or(c.value, group, 0);
+#ifdef SHORT_PRINT
+        outputString += std::to_string(amount) + " ";
+#else
+        outputString += "{(" + std::to_string(group) + ") " + Cost::get_group_name(group) + ": " + std::to_string(amount) + "}, ";
+#endif // SHORT_PRINT
+    }
+    return "Cost[" + std::to_string(c.sum) + "]( " + outputString + ")";
 }
 
 std::ostream &operator<<(std::ostream &os, const Cost &c) {

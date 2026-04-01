@@ -150,17 +150,19 @@ void UniformCostSearch::stepImage(int maxTime, int maxNodes) {
     ResultExpansion res_expansion = frontier.expand(maxTime, maxNodes, fw);
 
     if (res_expansion.ok) {
+        utils::g_log << "expanded frontier : " << frontier.g() << std::endl;
         lastStepCost = false; // Must be set to false before calling checkCut
         // Process Simg, removing duplicates and computing h. Store in Sfilter
         // and reopen. Include new states in the open list
         for (auto &resImage : res_expansion.buckets) {
-            for (auto &pairCostBDDs : resImage) {
-                Cost cost = frontier.g() + pairCostBDDs.first;
-                mgr->merge_bucket(pairCostBDDs.second);
+            for (auto &[imageCost, bucket] : resImage) {
+                Cost cost = frontier.g() + imageCost;
+                
+                mgr->merge_bucket(bucket);
 
-                checkFrontierCut(pairCostBDDs.second, cost);
+                checkFrontierCut(bucket, cost);
 
-                for (auto &bdd : pairCostBDDs.second) {
+                for (auto &bdd : bucket) {
                     if (!bdd.IsZero()) {
                         stepNodes = max(stepNodes, bdd.nodeCount());
                         open_list.insert(bdd, cost);

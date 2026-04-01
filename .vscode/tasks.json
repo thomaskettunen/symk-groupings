@@ -2,6 +2,14 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "clean-plans",
+      "type": "shell",
+      "command": "rm",
+      "args": ["-f", "${workspaceFolder}/sas_plan.*"],
+      "group": "build",
+      "problemMatcher": [],
+    },
+    {
       "label": "build-symbolic",
       "type": "shell",
       "command": "./build.py",
@@ -23,7 +31,13 @@
       "dependsOn": ["build-symbolic"],
       "dependsOrder": "sequence",
       "problemMatcher": [],
-    }
+    },
+    {
+      "label": "build-and-clean",
+      "group": "build",
+      "dependsOn": ["translate-symbolic", "clean-plans"],
+      "dependsOrder": "sequence",
+    },
   ],
   "inputs": [
     {
