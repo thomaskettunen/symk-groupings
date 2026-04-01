@@ -7,10 +7,7 @@ namespace found_plans
   bool found_plans::is_dominated(symbolic::Cost g) {
     for (auto cost : this->paretto_frontier) {
       if (cost.dominates(g)) {
-        std::cout << g << " is dominated by " << cost << std::endl;
         return true;
-      } else {
-        std::cout << g << " is NOT dominated by " << cost << std::endl;
       }
     }
     return false;

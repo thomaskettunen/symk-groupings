@@ -8,16 +8,16 @@
       "program": "${workspaceFolder}/builds/symbolic/bin/downward",
       "args": [
         "--search",
-        "symk_bd(simple=true,plan_selection=top_k(num_plans=${input:numPlans},dump_plans=false))",
+        "symk_fw(silent=true,simple=true,plan_selection=top_k(num_plans=${input:numPlans},dump_plans=false))",
         "--internal-plan-file",
         "sas_plan",
       ],
       "cwd": "${workspaceFolder}",
       "MIMode": "gdb",
       "miDebuggerPath": "/usr/bin/gdb",
-      "stopAtEntry": true,
+      "stopAtEntry": false,
       "externalConsole": false,
-      "preLaunchTask": "translate-symbolic",
+      "preLaunchTask": "build-and-clean",
       "setupCommands": [
         {
           "description": "Enable pretty printing",

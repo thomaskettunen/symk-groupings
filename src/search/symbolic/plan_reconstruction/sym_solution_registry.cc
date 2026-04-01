@@ -40,13 +40,15 @@ void SymSolutionRegistry::reconstruct_plans( // NOTE: P10: When this is called w
     }
 
     if (!queue.empty()) {
-        symbolic::Cost thePrice = queue.top().get_f();
+        symbolic::Cost cost = queue.top().get_f();
         
-        if (found_plans::global_instance.is_dominated(thePrice)) {
-            std::cout << "dominated " << thePrice << std::endl;
+        if (found_plans::global_instance.is_dominated(cost)) {
+            utils::g_log << "dominated " << cost << std::endl;
+        }else{
+            utils::g_log << "found non dominated plan: " << cost << std::endl;
         }
-        std::cout << "not dominated " << thePrice << std::endl;  
-        found_plans::global_instance.paretto_frontier.insert(thePrice); // NOTE: P10: we get the total price for the current plan we want
+            
+        found_plans::global_instance.paretto_frontier.insert(cost); // NOTE: P10: we get the total price for the current plan we want
         // NOTE: P10: the queue for some reason finds all possible reorderings, where the hell does it do this
     }
 
@@ -289,7 +291,6 @@ void SymSolutionRegistry::register_solution(const SymSolutionCut &solution) {
 
 void SymSolutionRegistry::construct_cheaper_solutions(Cost bound) { // NOTE: P10: when this function is called we have a correct plan
     for (const auto &key : sym_cuts) {
-        std::cout << "guess who is back: " << key.first << std::endl;
         Cost plan_cost = key.first;
         const vector<SymSolutionCut> &cuts = key.second;
         if (plan_cost >= bound || found_all_plans())

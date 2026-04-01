@@ -34,7 +34,7 @@ public:
         return Cost::max(
             Cost::max(fw->getF(), bw->getF()),
             fw->getG() + bw->getG() 
-                // TODO: P10: Figure out if this min wiht ONE is really needed...
+                // TODO: P10: Figure out if this min with ONE is really needed...
                 // + Cost::min(Cost::ONE, mgr->get_min_transition_cost())
                 + mgr->get_min_transition_cost()
         );
