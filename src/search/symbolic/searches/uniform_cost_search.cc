@@ -88,22 +88,21 @@ bool UniformCostSearch::prepareBucket() {
             engine->setLowerBound(Cost::MAX);
             return true;
         }
-        open_list.pop(frontier);
-        last_g_cost = frontier.g();
 
-        if(frontier.empty()){ // NOTE: P10: hacky solution to stopping when frontier is empty do not forge
-            engine->setLowerBound(Cost::MAX);
-            return true;
+        while (frontier.empty()) {
+            if(open_list.empty()) { // NOTE: P10: hacky solution to stop when frontier is empty do not forge
+                engine->setLowerBound(Cost::MAX);
+                return true;
+            }
+            open_list.pop(frontier);
+            last_g_cost = frontier.g();
+            // assert(!frontier.empty() || frontier.g() == Cost::MAX);
+            checkFrontierCut(frontier.bucket(), frontier.g()); // TODO: P10: What this do?
+            filterFrontier();
         }
 
-        assert(!frontier.empty() || frontier.g() == Cost::MAX);
-        checkFrontierCut(frontier.bucket(), frontier.g());
-
-        filterFrontier();
-
         // Close and move to reopen
-        if (!lastStepCost || frontier.g() != Cost::MIN) {
-            // Avoid closing init twice
+        if (!lastStepCost || frontier.g() != Cost::MIN) { // Avoid closing init twice
             for (const BDD &states : frontier.bucket()) {
                 closed->insert(frontier.g(), states);
             }
@@ -123,7 +122,7 @@ bool UniformCostSearch::prepareBucket() {
 // This procedure is delayed in comparision to explicit search
 // Idea: no need to "change" BDDs until we actually process them
 void UniformCostSearch::filterFrontier() {
-    frontier.filter(!closed->notClosed());
+    frontier.filter(closed);
     mgr->filter_mutex(frontier.bucket(), fw, initialization());
     remove_zero(frontier.bucket());
 }
@@ -164,7 +163,7 @@ void UniformCostSearch::stepImage(int maxTime, int maxNodes) {
                 for (auto &bdd : pairCostBDDs.second) {
                     if (!bdd.IsZero()) {
                         stepNodes = max(stepNodes, bdd.nodeCount());
-                        open_list.insert(bdd, cost, closed);
+                        open_list.insert(bdd, cost);
                     }
                 }
             }

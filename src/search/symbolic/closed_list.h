@@ -4,8 +4,6 @@
 #include "sym_state_space_manager.h"
 #include "sym_variables.h"
 
-#include "searches/uniform_cost_search.h"
-
 #include <map>
 #include <set>
 #include <vector>
