@@ -9,6 +9,7 @@
 #include <map>
 
 #include "cost.h"
+#include "closed_list.h"
 
 namespace symbolic {
 class SymStateSpaceManager;
@@ -95,12 +96,7 @@ public:
         return Sfilter;
     }
 
-    void filter(const BDD &bdd) {
-        assert(Smerge.empty() && Szero.empty() && S.empty());
-        for (BDD &b : Sfilter) {
-            b *= !bdd;
-        }
-    }
+    void filter(const std::shared_ptr<ClosedList> closed);
 
     ResultExpansion expand(int maxTime, int maxNodes, bool fw) {
         assert(Smerge.empty() && Sfilter.empty());
