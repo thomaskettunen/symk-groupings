@@ -25,21 +25,15 @@ void Frontier::set(Cost g, Bucket &bdd) {
 
 void Frontier::filter(const std::shared_ptr<ClosedList> closed) {
     if (Sfilter.empty()) { return; }
-    BDD dominating(Sfilter[0]);
-    dominating = dominating.Xor(dominating); //. Hack to create zero bdd without passing around too muich stuff
-
     assert(Smerge.empty() && Szero.empty() && S.empty());
     for (auto &[cost, bdd] : closed->getClosedList()) {
         if (cost.dominates(this->g())) {
-            dominating += bdd;
+            for (BDD &b : Sfilter) {
+                b -= bdd;
+            }
         }
     }
-
-    for (BDD &b : Sfilter) {
-        b -= dominating;
-    }
 }
-
 
 bool Frontier::nextStepZero() const {
     return !Szero.empty() || (S.empty() && mgr->has_zero_cost_transition());
