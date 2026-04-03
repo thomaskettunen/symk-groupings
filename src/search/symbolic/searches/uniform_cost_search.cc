@@ -83,12 +83,7 @@ bool UniformCostSearch::provable_no_more_plans() {
 }
 
 bool UniformCostSearch::prepareBucket() {
-    if (!frontier.bucketReady()) {
-        if (provable_no_more_plans()) {
-            engine->setLowerBound(Cost::MAX);
-            return true;
-        }
-
+    if (!frontier.bucketReady()) { // NOTE: P10: Is this check really required?
         while (frontier.empty()) {
             if(open_list.empty()) { // NOTE: P10: hacky solution to stop when frontier is empty do not forge
                 engine->setLowerBound(Cost::MAX);
@@ -96,7 +91,6 @@ bool UniformCostSearch::prepareBucket() {
             }
             open_list.pop(frontier);
             last_g_cost = frontier.g();
-            // assert(!frontier.empty() || frontier.g() == Cost::MAX);
             checkFrontierCut(frontier.bucket(), frontier.g()); // TODO: P10: What this do?
             filterFrontier();
         }
@@ -109,10 +103,6 @@ bool UniformCostSearch::prepareBucket() {
         }
         engine->setLowerBound(getF());
         engine->setMinG(getG());
-    }
-
-    if (engine->solved()) {
-        return true; // If it has been solved, return
     }
 
     return false;
