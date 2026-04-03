@@ -83,8 +83,7 @@ SearchStatus SymbolicSearch::step() {
 
     // Search finished!
     if (lower_bound >= upper_bound) {
-        solution_registry->construct_cheaper_solutions(
-            Cost::MAX);
+        solution_registry->construct_cheaper_solutions(Cost::MAX);
         solution_found = plan_data_base->get_num_reported_plan() > 0;
         cur_status = solution_found ? SOLVED : FAILED;
     } else {
@@ -103,18 +102,13 @@ SearchStatus SymbolicSearch::step() {
     }
 
     if (lower_bound_increased && !silent) {
-        utils::g_log << "BOUND: " << lower_bound << " < " << upper_bound
-                     << flush;
+        utils::g_log << "BOUND: " << lower_bound << " < " << upper_bound << flush;
 
-        utils::g_log << " [" << solution_registry->get_num_found_plans() << "/"
-                     << plan_data_base->get_num_desired_plans() << " plans]"
-                     << flush;
+        utils::g_log << " [" << solution_registry->get_num_found_plans() << "/" << plan_data_base->get_num_desired_plans() << " plans]" << flush;
         if (step_num > 0) {
             utils::g_log << ", dir: " << search->get_last_dir() << flush;
         }
-        utils::g_log << ", reconstruction time: "
-                     << solution_registry->get_reconstruction_time() << "s"
-                     << flush;
+        utils::g_log << ", reconstruction time: " << solution_registry->get_reconstruction_time() << "s" << flush;
         utils::g_log << endl;
     }
     lower_bound_increased = false;

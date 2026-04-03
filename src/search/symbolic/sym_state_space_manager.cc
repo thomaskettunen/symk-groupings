@@ -97,18 +97,15 @@ void SymStateSpaceManager::cost_image(
     }
 }
 
-BDD SymStateSpaceManager::filter_mutex(
-    BDD bdd, bool fw, int node_limit, bool initialization) {
+BDD SymStateSpaceManager::filter_mutex(BDD bdd, bool fw, int node_limit, bool initialization) {
     BDD res = bdd;
-    const vector<BDD> &notDeadEndBDDs =
-        fw ? sym_mutexes.notDeadEndFw : sym_mutexes.notDeadEndBw;
+    const vector<BDD> &notDeadEndBDDs = fw ? sym_mutexes.notDeadEndFw : sym_mutexes.notDeadEndBw;
     for (const BDD &notDeadEnd : notDeadEndBDDs) {
         assert(!(notDeadEnd.IsZero()));
         res = res.And(notDeadEnd, node_limit);
     }
 
-    const vector<BDD> &notMutexBDDs =
-        (fw ? sym_mutexes.notMutexBDDsFw : sym_mutexes.notMutexBDDsBw);
+    const vector<BDD> &notMutexBDDs = (fw ? sym_mutexes.notMutexBDDsFw : sym_mutexes.notMutexBDDsBw);
 
     switch (sym_params.mutex_type) {
     case MutexType::MUTEX_NOT:
@@ -129,28 +126,22 @@ BDD SymStateSpaceManager::filter_mutex(
     return res;
 }
 
-int SymStateSpaceManager::filterMutexBucket(
-    vector<BDD> &bucket, bool fw, bool initialization, int max_time,
-    int max_nodes) {
+int SymStateSpaceManager::filterMutexBucket(vector<BDD> &bucket, bool fw, bool initialization, int max_time, int max_nodes) {
     int numFiltered = 0;
     set_time_limit(max_time);
     try {
         for (size_t i = 0; i < bucket.size(); ++i) {
             bucket[i] = filter_mutex(bucket[i], fw, max_nodes, initialization);
-            numFiltered++;
+            ++numFiltered;
         }
-    } catch (const BDDError &e) {
-    }
+    } catch (const BDDError &e) {} // NOTE: P10: Why do we just ignore errors?
     unset_time_limit();
 
     return numFiltered;
 }
 
-void SymStateSpaceManager::filter_mutex(
-    Bucket &bucket, bool fw, bool initialization) {
-    filterMutexBucket(
-        bucket, fw, initialization, sym_params.max_aux_time,
-        sym_params.max_aux_nodes);
+void SymStateSpaceManager::filter_mutex(Bucket &bucket, bool fw, bool initialization) {
+    filterMutexBucket(bucket, fw, initialization, sym_params.max_aux_time, sym_params.max_aux_nodes);
 }
 
 void SymStateSpaceManager::merge_bucket(Bucket &bucket) const {

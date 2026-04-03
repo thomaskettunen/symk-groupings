@@ -1,15 +1,11 @@
 #include "frontier.h"
-
 #include "sym_state_space_manager.h"
-
 #include "../utils/timer.h"
-
 #include "cost.h"
 #include "closed_list.h"
 
 namespace symbolic {
-Frontier::Frontier() : mgr(nullptr), g_value(Cost::MIN) { // NOTE: P10: I think this shoud be MIN, before it was 0
-}
+Frontier::Frontier() : mgr(nullptr), g_value(Cost::MIN) { }
 
 void Frontier::init(SymStateSpaceManager *mgr_, const BDD &bdd) {
     mgr = mgr_;
@@ -23,6 +19,10 @@ void Frontier::set(Cost g, Bucket &bdd) {
     Sfilter.swap(bdd);
 }
 
+/// @brief Filters dominated states from the closed-list out of the frontier.
+///
+///        I.e. if the frontier has cost (1 2 3) and contains state s1, which is found in the closed-list with any cost dominating (1 2 3), e.g. cost (1 1 1), s1 will be removed from the frontier.
+/// @param closed The closed-list to base the filtering on.
 void Frontier::filter(const std::shared_ptr<ClosedList> closed) {
     if (Sfilter.empty()) { return; }
     assert(Smerge.empty() && Szero.empty() && S.empty());
@@ -35,19 +35,14 @@ void Frontier::filter(const std::shared_ptr<ClosedList> closed) {
     }
 }
 
-bool Frontier::nextStepZero() const {
-    return !Szero.empty() || (S.empty() && mgr->has_zero_cost_transition());
-}
+bool Frontier::nextStepZero() const { return !Szero.empty() || (S.empty() && mgr->has_zero_cost_transition()); }
 
-Result Frontier::prepare(
-    int maxTime, int maxNodes, bool fw, bool initialization) {
+Result Frontier::prepare(int maxTime, int maxNodes, bool fw, bool initialization) {
     utils::Timer filterTime;
     if (!Sfilter.empty()) {
-        int numFiltered = mgr->filterMutexBucket(
-            Sfilter, fw, initialization, maxTime, maxNodes);
+        int numFiltered = mgr->filterMutexBucket(Sfilter, fw, initialization, maxTime, maxNodes);
         if (numFiltered > 0) {
-            Smerge.insert(
-                Smerge.end(), Sfilter.begin(), Sfilter.begin() + numFiltered);
+            Smerge.insert(Smerge.end(), Sfilter.begin(), Sfilter.begin() + numFiltered);
         }
         if (numFiltered == (int)(Sfilter.size())) {
             Bucket().swap(Sfilter);
@@ -81,17 +76,9 @@ Result Frontier::prepare(
     return Result(filterTime());
 }
 
-bool Frontier::bucketReady() const {
-    return !(Szero.empty() && S.empty() && Sfilter.empty() && Smerge.empty());
-}
-
-bool Frontier::expansionReady() const {
-    return Sfilter.empty() && Smerge.empty() && !(Szero.empty() && S.empty());
-}
-
-bool Frontier::empty() const {
-    return Szero.empty() && S.empty() && Sfilter.empty() && Smerge.empty();
-}
+bool Frontier::bucketReady() const { return !(Szero.empty() && S.empty() && Sfilter.empty() && Smerge.empty()); }
+bool Frontier::expansionReady() const { return Sfilter.empty() && Smerge.empty() && !(Szero.empty() && S.empty()); }
+bool Frontier::empty() const {return Szero.empty() && S.empty() && Sfilter.empty() && Smerge.empty(); }
 
 int Frontier::nodes() const {
     if (!Szero.empty()) {
@@ -149,23 +136,18 @@ ResultExpansion Frontier::expand_cost(int maxTime, int maxNodes, bool fw) {
         // Update estimation
         mgr->unset_time_limit();
 
-        return ResultExpansion(
-            false, TruncatedReason::IMAGE_COST, image_time());
+        return ResultExpansion(false, TruncatedReason::IMAGE_COST, image_time());
     }
 
-    Bucket().swap(S); // Delete Szero because it has been expanded
+    Bucket().swap(S); // Delete S because it has been expanded
     return ResultExpansion(false, Simg, image_time());
 }
 
 std::ostream &operator<<(std::ostream &os, const Frontier &frontier) {
-    if (!frontier.Sfilter.empty())
-        os << "Sf: " << nodeCount(frontier.Sfilter) << " ";
-    if (!frontier.Smerge.empty())
-        os << "Sm: " << nodeCount(frontier.Smerge) << " ";
-    if (!frontier.Szero.empty())
-        os << "Sz: " << nodeCount(frontier.Szero) << " ";
-    if (!frontier.S.empty())
-        os << "S: " << nodeCount(frontier.S) << " ";
+    if (!frontier.Sfilter.empty()) os << "Sf: " << nodeCount(frontier.Sfilter) << " ";
+    if (!frontier.Smerge.empty()) os << "Sm: " << nodeCount(frontier.Smerge) << " ";
+    if (!frontier.Szero.empty()) os << "Sz: " << nodeCount(frontier.Szero) << " ";
+    if (!frontier.S.empty()) os << "S: " << nodeCount(frontier.S) << " ";
     return os;
 }
 }
