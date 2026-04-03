@@ -21,8 +21,7 @@ struct SymMutexes {
     std::vector<BDD> notDeadEndFw, notDeadEndBw;
 
     // notMutex relative for each fluent
-    std::vector<std::vector<BDD>> notMutexBDDsByFluentFw,
-        notMutexBDDsByFluentBw;
+    std::vector<std::vector<BDD>> notMutexBDDsByFluentFw, notMutexBDDsByFluentBw;
     std::vector<std::vector<BDD>> exactlyOneBDDsByFluent;
 
     SymMutexes(SymVariables *sym_vars, const SymParameters &sym_params);
@@ -30,9 +29,7 @@ struct SymMutexes {
     void init(const std::shared_ptr<AbstractTask> task);
 
 protected:
-    void init(
-        const std::shared_ptr<AbstractTask> task, bool genMutexBDD,
-        bool genMutexBDDByFluent, bool fw);
+    void init(const std::shared_ptr<AbstractTask> task, bool genMutexBDD, bool genMutexBDDByFluent, bool fw);
 };
 }
 

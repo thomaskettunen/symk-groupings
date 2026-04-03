@@ -42,37 +42,26 @@ protected:
     // All the methods may throw exceptions in case the time or nodes are
     // exceeded.
     void zero_preimage(BDD bdd, std::vector<BDD> &res, int max_nodes) const;
-    void cost_preimage(
-        BDD bdd, std::map<Cost, std::vector<BDD>> &res, int max_nodes) const;
+    void cost_preimage(BDD bdd, std::map<Cost, std::vector<BDD>> &res, int max_nodes) const;
     void zero_image(BDD bdd, std::vector<BDD> &res, int maxn_nodes) const;
-    void cost_image(
-        BDD bdd, std::map<Cost, std::vector<BDD>> &res, int max_nodes) const;
+    void cost_image(BDD bdd, std::map<Cost, std::vector<BDD>> &res, int max_nodes) const;
 
 public:
     SymStateSpaceManager(
         SymVariables *sym_vars, const SymParameters &sym_params,
         const std::shared_ptr<AbstractTask> &task);
 
-    virtual ~SymStateSpaceManager() {
-    }
+    virtual ~SymStateSpaceManager() { }
 
     void filter_mutex(Bucket &bucket, bool fw, bool initialization);
     void merge_bucket(Bucket &bucket) const;
     void merge_bucket_and(Bucket &bucket) const;
 
-    BDD get_goal() {
-        return goal;
-    }
-    BDD get_initial_state() {
-        return initial_state;
-    }
+    BDD get_goal() { return goal; }
+    BDD get_initial_state() { return initial_state; }
 
-    BDD zeroBDD() const {
-        return sym_vars->zeroBDD();
-    }
-    BDD oneBDD() const {
-        return sym_vars->oneBDD();
-    }
+    BDD zeroBDD() const { return sym_vars->zeroBDD(); }
+    BDD oneBDD() const { return sym_vars->oneBDD(); }
 
     bool merge_bucket(Bucket &bucket, int maxTime, int maxNodes) const {
         auto mergeBDDs = [](BDD bdd, BDD bdd2, int maxNodes) {

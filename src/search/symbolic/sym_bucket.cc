@@ -6,11 +6,13 @@
 using namespace std;
 
 namespace symbolic {
+/// @brief Removes empty BBD's from the bucket
+/// @param bucket 
 void remove_zero(Bucket &bucket) {
     bucket.erase(
-        remove_if(
-            begin(bucket), end(bucket), [](BDD &bdd) { return bdd.IsZero(); }),
-        end(bucket));
+        remove_if(begin(bucket), end(bucket), [](BDD &bdd) { return bdd.IsZero(); }), 
+        end(bucket)
+    );
 }
 
 void copy_bucket(const Bucket &bucket, Bucket &res) {

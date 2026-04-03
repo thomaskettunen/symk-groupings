@@ -124,11 +124,9 @@ void UniformCostSearch::stepImage(int maxTime, int maxNodes) {
         return;
     }
 
-    Result prepare_res =
-        frontier.prepare(maxTime, maxNodes, fw, initialization());
+    Result prepare_res = frontier.prepare(maxTime, maxNodes, fw, initialization());
     if (!prepare_res.ok) {
-        step_estimation.set_data(
-            step_timer(), frontier.nodes(), !prepare_res.ok);
+        step_estimation.set_data(step_timer(), frontier.nodes(), !prepare_res.ok);
         return;
     }
 

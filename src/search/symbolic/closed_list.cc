@@ -72,24 +72,22 @@ SymSolutionCut ClosedList::getCheapestCut(BDD states, Cost g, bool fw) const {
     return SymSolutionCut();
 }
 
-vector<SymSolutionCut> ClosedList::getAllCuts(
-    BDD states, Cost g, bool fw, Cost lower_bound) const {
+/// @brief For a set of (newly expanded) states, expanded with a given g, find all cuts with the closed list
+/// @param states Newly expanded states
+/// @param g The cost of reachign them
+/// @param fw Whether we are perfoming forward search
+/// @param lower_bound The highest cost for a full plan allowed
+/// @return The different cuts, at different costs
+vector<SymSolutionCut> ClosedList::getAllCuts(BDD states, Cost g, bool fw, Cost lower_bound) const {
     vector<SymSolutionCut> result;
     BDD cut_candidate = states * closedTotal;
     if (!cut_candidate.IsZero()) {
-        for (const auto &closedH : closed) {
-            Cost h = closedH.first;
+        for (const auto &[h, bdd] : closed) {
+            //* Here we also need to consider higher costs due to the architecture of symBD. Otherwise their occur problems in
+            if (g + h < lower_bound) { continue; }
 
-            /* Here we also need to consider higher costs due to the
-             architecture of symBD. Otherwise their occur problems in
-             */
-            if (g + h < lower_bound) {
-                continue;
-            }
-
-            // utils::g_log << "Check cut of g=" << g << " with h=" << h <<
-            // endl;
-            BDD cut = closedH.second * cut_candidate;
+            // utils::g_log << "Check cut of g=" << g << " with h=" << h << endl;
+            BDD cut = bdd * cut_candidate;
             if (!cut.IsZero()) {
                 if (fw) {
                     result.emplace_back(g, h, cut);
