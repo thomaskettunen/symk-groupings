@@ -12,12 +12,12 @@
 #include <set>
 
 template<typename K, typename V> V map_has(std::unordered_map<K, V> map, K key) {
-    return map.find(key) == map.end();
+    return map.find(key) != map.end();
 }
 
 template<typename K, typename V> V map_get_or(std::unordered_map<K, V> map, K key, V default_val) {
-    if (map_has(map, key)) return default_val;
-    else return map.at(key);
+    if (map_has(map, key)) return map.at(key);
+    else return default_val;
 }
 
 namespace symbolic {
