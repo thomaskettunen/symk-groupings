@@ -35,8 +35,6 @@ public:
 
     void insert(Cost h, BDD S);
 
-    BDD getPartialClosed(Cost upper_bound) const;
-
     SymSolutionCut getCheapestCut(BDD states, Cost g, bool fw) const;
 
     std::vector<SymSolutionCut> getAllCuts(

@@ -7,8 +7,6 @@
 #include "cost.h"
 #include "closed_list.h"
 
-using namespace std;
-
 namespace symbolic {
 Frontier::Frontier() : mgr(nullptr), g_value(Cost::MIN) { // NOTE: P10: I think this shoud be MIN, before it was 0
 }
@@ -129,7 +127,7 @@ ResultExpansion Frontier::expand_zero(int maxTime, int maxNodes, bool fw) {
     // Compute image, storing the result on Simg
     try {
         for (size_t i = 0; i < Szero.size(); i++) {
-            Simg.push_back(map<Cost, Bucket>());
+            Simg.push_back(std::map<Cost, Bucket>());
             mgr->zero_image(fw, Szero[i], Simg[i][Cost::MIN], maxNodes);
         }
         mgr->unset_time_limit();
@@ -149,7 +147,7 @@ ResultExpansion Frontier::expand_cost(int maxTime, int maxNodes, bool fw) {
     // cout << maxTime << " + " << maxNodes << endl;
     try {
         for (size_t i = 0; i < S.size(); i++) {
-            Simg.push_back(map<Cost, Bucket>());
+            Simg.push_back(std::map<Cost, Bucket>());
             mgr->cost_image(fw, S[i], Simg[i], maxNodes);
         }
         mgr->unset_time_limit();
@@ -165,7 +163,7 @@ ResultExpansion Frontier::expand_cost(int maxTime, int maxNodes, bool fw) {
     return ResultExpansion(false, Simg, image_time());
 }
 
-ostream &operator<<(ostream &os, const Frontier &frontier) {
+std::ostream &operator<<(std::ostream &os, const Frontier &frontier) {
     if (!frontier.Sfilter.empty())
         os << "Sf: " << nodeCount(frontier.Sfilter) << " ";
     if (!frontier.Smerge.empty())

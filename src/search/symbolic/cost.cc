@@ -48,36 +48,6 @@ const Cost Cost::INVALID = Cost(CostMagicFlags::INVALID);
 const Cost Cost::MIN = Cost(std::unordered_map<GroupID, int>());
 const Cost Cost::MAX = Cost(CostMagicFlags::MAX);
 
-/// @return The largest lower bound, i.e. a, where x < this -> x <= a
-Cost Cost::lower_bound() {
-    // NOTE: P10: Assumes the keys are ordereable
-    std::set<GroupID> keys;
-    for(auto &[key, _] : this->value) {
-        keys.insert(key);
-    }
-    
-    Cost result = Cost::MIN;
-    int remaining = keys.size();
-    for (const GroupID group : keys) { // NOTE: P10: Iterated in order of keys
-        --remaining;
-        int val = this->value.at(group);
-        if (remaining == 0) --val; //. Decrement the last value (least significant in lexicographical ordering)
-        result.value.insert({group, val});
-    }
-    return result;
-}
-
-/// @return The smallest upper bound, i.e. a, where x > this -> x >= a
-Cost Cost::upper_bound() {
-    Cost result = Cost::MIN;
-    for (const auto &[group, val] : this->value) { // NOTE: P10: Is there a "right" way to copy this?
-        result.value.insert({group, val});
-    }
-    GroupID max_group = std::numeric_limits<GroupID>::max();
-    result.value.insert({max_group, map_get_or(this->value, max_group, 0) + 1});
-    return result;
-}
-
 Cost &Cost::operator+=(const Cost &other) {
     if (other.magic == CostMagicFlags::INVALID || this->magic == CostMagicFlags::INVALID) { throw std::runtime_error("Addition with Cost(INVALID)"); }
     for (const auto& [group, amount] : other.value) {
@@ -111,10 +81,6 @@ Cost Cost::operator-(const Cost other) const {
     tmp -= other;
     return tmp;
 }
-
-// Cost Cost::operator*(const double other) const {
-//     throw std::runtime_error("there are no doubles");
-// }
 
 bool Cost::operator>=(const Cost &other) const {
     switch (this->magic)
@@ -421,10 +387,3 @@ GroupID Cost::get_group_id(const TaskProxy task, OperatorID op_id) {
     return group_id;
 };
 }
-
-// namespace std {
-//     size_t hash<symbolic::Cost>::operator()(const symbolic::Cost& cost) const {
-//         // TODO: P10: make a real human hash function
-//         return 1;
-//     }
-// }

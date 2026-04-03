@@ -8,8 +8,6 @@
 namespace symbolic {
 class TopkUniformCostSearch : public UniformCostSearch {
 protected:
-    virtual bool provable_no_more_plans() override;
-
     virtual void checkFrontierCut(Bucket &bucket, Cost g) override;
 
     virtual void filterFrontier() override;

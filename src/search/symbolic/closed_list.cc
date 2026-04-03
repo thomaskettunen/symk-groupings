@@ -49,17 +49,6 @@ void ClosedList::insert(Cost h, BDD S) {
     closedTotal += S;
 }
 
-BDD ClosedList::getPartialClosed(Cost upper_bound) const {
-    BDD res = mgr->zeroBDD();
-    for (const auto &pair : closed) {
-        if (pair.first > upper_bound) {
-            break;
-        }
-        res += pair.second;
-    }
-    return res;
-}
-
 SymSolutionCut ClosedList::getCheapestCut(BDD states, Cost g, bool fw) const {
     BDD cut_candidate = states * closedTotal;
     if (cut_candidate.IsZero()) {
