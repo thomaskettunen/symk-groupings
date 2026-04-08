@@ -4,7 +4,7 @@
 
 #include "../cost.h"
 
-#include "../found_plans.h"
+#include "../pareto_front.h"
 
 using namespace std;
 
@@ -22,7 +22,7 @@ void SymSolutionRegistry::reconstruct_plans( // NOTE: P10: When this is called w
         assert(fw_closed || sym_cut.get_g() == Cost::MIN);
         assert(bw_closed || sym_cut.get_h() == Cost::MIN);
 
-        if(found_plans::global_instance.is_dominated(sym_cut.get_f())) continue; // NOTE: P10: if the current plan is dominated we should just not even push it to the queue
+        if(pareto_front::dominates(sym_cut.get_f())) continue; // NOTE: P10: if the current plan is dominated we should just not even push it to the queue
 
         ReconstructionNode cur_node(
             sym_cut.get_g(), sym_cut.get_h(), std::numeric_limits<int>::max(),
@@ -42,13 +42,13 @@ void SymSolutionRegistry::reconstruct_plans( // NOTE: P10: When this is called w
     if (!queue.empty()) {
         symbolic::Cost cost = queue.top().get_f();
         
-        if (found_plans::global_instance.is_dominated(cost)) {
+        if (pareto_front::dominates(cost)) {
             utils::g_log << "dominated " << cost << std::endl;
         }else{
             utils::g_log << "found non dominated plan: " << cost << std::endl;
         }
             
-        found_plans::global_instance.paretto_frontier.insert(cost); // NOTE: P10: we get the total price for the current plan we want
+        pareto_front::insert(cost); // NOTE: P10: we get the total price for the current plan we want
         // NOTE: P10: the queue for some reason finds all possible reorderings, where the hell does it do this
     }
 
@@ -188,17 +188,17 @@ void SymSolutionRegistry::expand_actions(const ReconstructionNode &node) {
                 if (simple_solutions()) {
                     bw_node.add_visited_states(fw_closed->get_start_states());
                 }
-                if (!found_plans::global_instance.is_dominated(bw_node.get_f())) {
+                if (!pareto_front::dominates(bw_node.get_f())) {
                     queue.push(bw_node);
                 }
 
                 if (task_has_zero_costs() && no_pruning()) {
-                    if (!found_plans::global_instance.is_dominated(new_node.get_f())) {
+                    if (!pareto_front::dominates(new_node.get_f())) {
                         queue.push(new_node);
                     }
                 }
             } else {
-                if (!found_plans::global_instance.is_dominated(new_node.get_f())) {
+                if (!pareto_front::dominates(new_node.get_f())) {
                     queue.push(new_node);
                 }
             }

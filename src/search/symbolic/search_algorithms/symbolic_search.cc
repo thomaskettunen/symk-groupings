@@ -10,7 +10,7 @@
 #include "../searches/top_k_uniform_cost_search.h"
 #include "../searches/uniform_cost_search.h"
 
-#include "../found_plans.h"
+#include "../pareto_front.h"
 
 using namespace std;
 using namespace options;
@@ -88,7 +88,7 @@ SearchStatus SymbolicSearch::step() {
         cur_status = solution_found ? SOLVED : FAILED;
     } else {
         // Bound increased => construct plans
-        if (lower_bound_increased && !found_plans::global_instance.is_dominated(lower_bound)) { // NOTE: P10: making sure the lower bound is also not dominated. may be it is slow to do this here but whatever
+        if (lower_bound_increased && !pareto_front::dominates(lower_bound)) { // NOTE: P10: making sure the lower bound is also not dominated. may be it is slow to do this here but whatever
             solution_registry->construct_cheaper_solutions(lower_bound); // NOTE: P10: When this is called the lower_bound is equal to the cost of the cheapest plan
         }
 
