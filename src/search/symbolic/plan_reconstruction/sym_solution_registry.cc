@@ -10,7 +10,7 @@ using namespace std;
 
 namespace symbolic {
 void SymSolutionRegistry::add_plan(const Plan &plan) const { 
-    assert(!(simple_solutions() && plan_data_base->has_zero_cost_loop(plan)));
+    assert(!(plan_data_base->has_zero_cost_loop(plan)));
     plan_data_base->add_plan(plan);
 }
 
@@ -57,31 +57,24 @@ void SymSolutionRegistry::reconstruct_plans( // NOTE: P10: When this is called w
         ReconstructionNode cur_node = queue.top();
         queue.pop();
 
-        // If we do simple planning, we extract a single state form the relevant
-        // states and process it
-        if (simple_solutions()) {
-            if (sym_vars->numStates(cur_node.get_states()) > 1) {
-                BDD state_bdd =
-                    sym_vars->getSinglePrimaryStateFrom(cur_node.get_states());
-                ReconstructionNode remaining_node = cur_node;
-                remaining_node.set_states(
-                    remaining_node.get_states() * !state_bdd);
-                if (sym_vars->numStates(remaining_node.get_states()) > 0) {
-                    queue.push(remaining_node);
-                }
-                assert(
-                    sym_vars->numStates(remaining_node.get_states()) > 0 ||
-                    remaining_node.get_states() == sym_vars->zeroBDD());
-                cur_node.set_states(state_bdd);
+        // We extract a single state form the relevant states and process it (because we do simple solutions only?)
+        if (sym_vars->numStates(cur_node.get_states()) > 1) {
+            BDD state_bdd = sym_vars->getSinglePrimaryStateFrom(cur_node.get_states());
+            ReconstructionNode remaining_node = cur_node;
+            remaining_node.set_states(remaining_node.get_states() * !state_bdd);
+            if (sym_vars->numStates(remaining_node.get_states()) > 0) {
+                queue.push(remaining_node);
             }
-            cur_node.add_visited_states(cur_node.get_states());
+            assert(sym_vars->numStates(remaining_node.get_states()) > 0 || remaining_node.get_states() == sym_vars->zeroBDD());
+            cur_node.set_states(state_bdd);
         }
+        cur_node.add_visited_states(cur_node.get_states());
 
         // utils::g_log << cur_node << endl;
 
         assert(sym_vars->numStates(cur_node.get_states()) > 0);
-        assert(!simple_solutions() || sym_vars->numStates(cur_node.get_states()) == 1);
-        assert(!simple_solutions() || cur_node.get_plan_length() + 1 == sym_vars->numStates(cur_node.get_visitied_states()));
+        assert(sym_vars->numStates(cur_node.get_states()) == 1);
+        assert(cur_node.get_plan_length() + 1 == sym_vars->numStates(cur_node.get_visitied_states()));
 
         // Check if we have found a solution with this cut
         if (is_solution(cur_node)) { // NOTE: P10: Here we check if the current node we are looking at is a solution, maybe checking if not dominated here would result in getting the plans we want
@@ -96,10 +89,6 @@ void SymSolutionRegistry::reconstruct_plans( // NOTE: P10: When this is called w
                 return;
             }
 
-            // Not necessary to with this plan since it can only lead to
-            // unjustified plans
-            if (justified_solutions()) continue;
-            
             queue = ReconstructionQueue(CompareReconstructionNodes(ReconstructionPriority::REMAINING_COST));
             return; // NOTE: P10: this return probably shouldnt be here and we should instead check for other ways to break out of here
             // NOTE: P10: with the above return we always end up with only one plan and never come in here again
@@ -147,9 +136,7 @@ void SymSolutionRegistry::expand_actions(const ReconstructionNode &node) {
                     cur_closed_list->get_zero_cut(new_cost, intersection);
 
             // Ignore states we have already visited
-            if (simple_solutions()) {
-                intersection *= !node.get_visitied_states();
-            }
+            intersection *= !node.get_visitied_states();
 
             if (intersection.IsZero()) {
                 continue;
@@ -185,29 +172,15 @@ void SymSolutionRegistry::expand_actions(const ReconstructionNode &node) {
                     make_shared<ReconstructionNode>(node), tr);
 
                 // Add init state to visited states
-                if (simple_solutions()) {
-                    bw_node.add_visited_states(fw_closed->get_start_states());
-                }
+                bw_node.add_visited_states(fw_closed->get_start_states());
+
                 if (!pareto_front::dominates(bw_node.get_f())) {
                     queue.push(bw_node);
-                }
-
-                if (task_has_zero_costs() && no_pruning()) {
-                    if (!pareto_front::dominates(new_node.get_f())) {
-                        queue.push(new_node);
-                    }
                 }
             } else {
                 if (!pareto_front::dominates(new_node.get_f())) {
                     queue.push(new_node);
                 }
-            }
-
-            // A single solution and we made progress
-            if (single_solution() &&
-                (new_node.get_f() < node.get_f() ||
-                 new_node.get_zero_layer() < node.get_zero_layer())) {
-                return;
             }
         }
     }
@@ -228,15 +201,8 @@ bool SymSolutionRegistry::is_solution(const ReconstructionNode &node) const {
     return !(node.get_states() * closed->get_start_states()).IsZero();
 }
 
-SymSolutionRegistry::SymSolutionRegistry()
-    : justified_solutions_pruning(false),
-      single_solution_pruning(false),
-      simple_solutions_pruning(false),
-      fw_closed(nullptr),
-      bw_closed(nullptr),
-      plan_data_base(nullptr) {
-    queue = ReconstructionQueue(
-        CompareReconstructionNodes(ReconstructionPriority::REMAINING_COST));
+SymSolutionRegistry::SymSolutionRegistry(): fw_closed(nullptr), bw_closed(nullptr), plan_data_base(nullptr) {
+    queue = ReconstructionQueue(CompareReconstructionNodes(ReconstructionPriority::REMAINING_COST));
 }
 
 void SymSolutionRegistry::init(
@@ -244,15 +210,13 @@ void SymSolutionRegistry::init(
     shared_ptr<symbolic::ClosedList> fw_closed,
     shared_ptr<symbolic::ClosedList> bw_closed,
     shared_ptr<SymTransitionRelations> sym_transition_relations,
-    shared_ptr<PlanSelector> plan_data_base, bool single_solution,
-    bool simple_solutions) {
+    shared_ptr<PlanSelector> plan_data_base
+) {
     this->sym_vars = sym_vars;
     this->plan_data_base = plan_data_base;
     this->fw_closed = fw_closed;
     this->bw_closed = bw_closed;
     this->sym_transition_relations = sym_transition_relations;
-    this->single_solution_pruning = single_solution;
-    this->simple_solutions_pruning = simple_solutions;
 
     // If unit costs we simple use sort by remaining cost
     if (sym_transition_relations->has_unit_cost()) {
@@ -265,14 +229,6 @@ void SymSolutionRegistry::init(
 }
 
 void SymSolutionRegistry::register_solution(const SymSolutionCut &solution) {
-    if (single_solution()) {
-        if (!sym_cuts.empty()) {
-            sym_cuts = map<Cost, vector<SymSolutionCut>>();
-        }
-        sym_cuts[solution.get_f()].push_back(solution);
-        return;
-    }
-
     bool merged = false;
     size_t pos = 0;
     for (; pos < sym_cuts[solution.get_f()].size(); pos++) {

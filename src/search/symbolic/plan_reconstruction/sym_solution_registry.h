@@ -25,25 +25,11 @@ typedef std::priority_queue<
     CompareReconstructionNodes>
     ReconstructionQueue;
 
-enum class PlanPruning {
-    /* Multiple combinable options to specify which plans are allowed to be part
-    of the solution set. The Plan reconstruction will optimize to prune partial
-    plans that can not fullfill the contraints. */
-    SINGLE_SOLUTION = 0,
-    SIMPLE_SOLUTIONS = 1,
-    JUSTIFIED = 2
-};
-
 class UniformCostSearch;
 class ClosedList;
 
 class SymSolutionRegistry {
 protected:
-    // Pruning techniques
-    bool justified_solutions_pruning;
-    bool single_solution_pruning;
-    bool simple_solutions_pruning;
-
     std::map<Cost, std::vector<SymSolutionCut>> sym_cuts;
 
     std::shared_ptr<SymVariables> sym_vars;
@@ -72,23 +58,6 @@ protected:
         return sym_transition_relations->has_zero_cost_transition();
     }
 
-    bool justified_solutions() const {
-        return justified_solutions_pruning;
-    }
-
-    bool simple_solutions() const {
-        return simple_solutions_pruning;
-    }
-
-    bool single_solution() const {
-        return single_solution_pruning;
-    }
-
-    bool no_pruning() const {
-        return !single_solution() && !justified_solutions() &&
-               !simple_solutions();
-    }
-
 public:
     SymSolutionRegistry();
 
@@ -97,8 +66,8 @@ public:
         std::shared_ptr<symbolic::ClosedList> fw_closed,
         std::shared_ptr<symbolic::ClosedList> bw_closed,
         std::shared_ptr<SymTransitionRelations> sym_transition_relations,
-        std::shared_ptr<PlanSelector> plan_data_base, bool single_solution,
-        bool simple_solutions);
+        std::shared_ptr<PlanSelector> plan_data_base
+    );
 
     virtual ~SymSolutionRegistry() = default;
 

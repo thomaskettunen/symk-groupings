@@ -29,9 +29,7 @@ void TopkSymbolicUniformCostSearch::initialize() {
         fw_search ? fw_search->getClosedShared() : nullptr,
         bw_search ? bw_search->getClosedShared() : nullptr,
         sym_trs,
-        plan_data_base,
-        false,
-        simple
+        plan_data_base
     );
 
     if (fw && bw) {

@@ -8,7 +8,7 @@
       "program": "${workspaceFolder}/builds/symbolic/bin/downward",
       "args": [
         "--search",
-        "symk_fw(silent=true,simple=true,plan_selection=top_k(num_plans=${input:numPlans},dump_plans=false))",
+        "symk_fw(silent=true,plan_selection=top_k(num_plans=${input:numPlans},dump_plans=false))",
         "--internal-plan-file",
         "sas_plan",
       ],
