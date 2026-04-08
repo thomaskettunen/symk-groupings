@@ -70,7 +70,7 @@ public:
     }
 
     virtual bool solved() const {
-        return lower_bound >= upper_bound;
+        return search_done;
     }
 
     virtual Cost getLowerBound() const {
@@ -92,6 +92,8 @@ public:
     virtual void save_plan_if_necessary() override;
 
     static void add_options_to_feature(plugins::Feature &feature);
+
+    bool search_done = false;
 };
 }
 

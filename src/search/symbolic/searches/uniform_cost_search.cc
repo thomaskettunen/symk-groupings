@@ -86,7 +86,7 @@ bool UniformCostSearch::prepareBucket() {
     if (!frontier.bucketReady()) { // NOTE: P10: Is this check really required?
         while (frontier.empty()) {
             if(open_list.empty()) { // NOTE: P10: hacky solution to stop when frontier is empty do not forge
-                engine->setLowerBound(Cost::MAX);
+                engine->search_done = true;
                 return true;
             }
             open_list.pop(frontier);
