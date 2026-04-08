@@ -6,7 +6,7 @@
 
 #include "cost.h"
 
-#include "found_plans.h"
+#include "pareto_front.h"
 
 #include "closed_list.h"
 
@@ -37,7 +37,7 @@ void OpenList::pop(Frontier &frontier) {
     assert(frontier.empty());
     symbolic::Cost g = open.begin()->first;
 
-    while (found_plans::global_instance.is_dominated(g)) {
+    while (pareto_front::dominates(g)) {
         open.erase(g);
         if(open.empty()) return;
         g = open.begin()->first;

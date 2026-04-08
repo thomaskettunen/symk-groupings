@@ -1002,7 +1002,7 @@ create_fast_downward_library(
     NAME symbolic
     HELP "Plugin containing the base for symbolic search"
     SOURCES
-        symbolic/found_plans
+        symbolic/pareto_front
         symbolic/cost
         symbolic/closed_list
         symbolic/frontier
