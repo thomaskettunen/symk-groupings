@@ -82,7 +82,7 @@ SearchStatus SymbolicSearch::step() {
     SearchStatus cur_status;
 
     // Search finished!
-    if (lower_bound >= upper_bound) {
+    if (search_done) { 
         solution_registry->construct_cheaper_solutions(Cost::MAX);
         solution_found = plan_data_base->get_num_reported_plan() > 0;
         cur_status = solution_found ? SOLVED : FAILED;
@@ -101,8 +101,7 @@ SearchStatus SymbolicSearch::step() {
         }
     }
 
-    if (lower_bound_increased && !silent) {
-        utils::g_log << "BOUND: " << lower_bound << " < " << upper_bound << flush;
+    if (!silent) {
 
         utils::g_log << " [" << solution_registry->get_num_found_plans() << "/" << plan_data_base->get_num_desired_plans() << " plans]" << flush;
         if (step_num > 0) {
