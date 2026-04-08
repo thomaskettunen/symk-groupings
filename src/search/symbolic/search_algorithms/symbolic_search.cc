@@ -93,7 +93,7 @@ SearchStatus SymbolicSearch::step() {
         }
 
         // All plans found
-        if (solution_registry->found_all_plans()) {
+        if (solution_registry->found_k_plans()) {
             solution_found = true;
             cur_status = SOLVED;
         } else {
@@ -136,7 +136,7 @@ void SymbolicSearch::setLowerBound(Cost lower) {
 }
 
 void SymbolicSearch::new_solution(const SymSolutionCut &sol) {
-    if (!solution_registry->found_all_plans()) {
+    if (!solution_registry->found_k_plans()) {
         solution_registry->register_solution(sol);
         upper_bound = min(upper_bound, sol.get_f());
     }

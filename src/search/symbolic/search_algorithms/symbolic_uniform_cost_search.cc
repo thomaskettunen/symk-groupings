@@ -78,7 +78,7 @@ SymbolicUniformCostSearch::SymbolicUniformCostSearch(
 }
 
 void SymbolicUniformCostSearch::new_solution(const SymSolutionCut &sol) {
-    if (!solution_registry->found_all_plans() && sol.get_f() < upper_bound) {
+    if (!solution_registry->found_k_plans() && sol.get_f() < upper_bound) {
         solution_registry->register_solution(sol);
         upper_bound = sol.get_f();
     }

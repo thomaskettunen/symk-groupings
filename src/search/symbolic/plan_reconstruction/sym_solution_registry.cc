@@ -293,7 +293,7 @@ void SymSolutionRegistry::construct_cheaper_solutions(Cost bound) { // NOTE: P10
     for (const auto &key : sym_cuts) {
         Cost plan_cost = key.first;
         const vector<SymSolutionCut> &cuts = key.second;
-        if (plan_cost >= bound || found_all_plans())
+        if (plan_cost >= bound || found_k_plans())
             break;
 
         reconstruction_timer.resume();
