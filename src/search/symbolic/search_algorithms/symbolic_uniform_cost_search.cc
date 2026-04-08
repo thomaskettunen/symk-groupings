@@ -61,8 +61,10 @@ void SymbolicUniformCostSearch::initialize() {
 
     solution_registry->init(
         vars, fw_search ? fw_search->getClosedShared() : nullptr,
-        bw_search ? bw_search->getClosedShared() : nullptr, sym_trs,
-        plan_data_base, true, simple);
+        bw_search ? bw_search->getClosedShared() : nullptr,
+        sym_trs,
+        plan_data_base
+    );
 
     if (fw && bw) {
         search = unique_ptr<BidirectionalSearch>(new BidirectionalSearch(

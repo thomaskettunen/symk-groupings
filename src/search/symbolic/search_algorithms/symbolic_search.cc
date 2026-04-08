@@ -30,7 +30,6 @@ SymbolicSearch::SymbolicSearch(const plugins::Options &opts)
       min_g(Cost::MIN),
       plan_data_base(opts.get<shared_ptr<PlanSelector>>("plan_selection")),
       solution_registry(make_shared<SymSolutionRegistry>()),
-      simple(opts.get<bool>("simple")),
       silent(opts.get<bool>("silent")) {
     cout << endl;
     vars->print_options();
@@ -51,19 +50,17 @@ void SymbolicSearch::initialize() {
             make_shared<tasks::CostAdaptedTask>(search_task, cost_type);
     }
 
-    if (simple) {
-        utils::g_log << "Plan Reconstruction: Simple (without loops)" << endl;
-        // compute upper cost bound
-        double num_states = 1;
-        for (int var = 0; var < task->get_num_variables(); var++) {
-            num_states *= task->get_variable_domain_size(var);
-        }
-        Cost max_plan_cost = Cost::MAX; // TODO: P10: Once again we simply lie about the upper bound
-        upper_bound = Cost::MAX; // TODO: P10: See above
-
-        utils::g_log << "Maximal plan cost: " << upper_bound << endl;
-        cout << endl;
+    utils::g_log << "Plan Reconstruction: Simple (without loops)" << endl;
+    // compute upper cost bound
+    double num_states = 1;
+    for (int var = 0; var < task->get_num_variables(); var++) {
+        num_states *= task->get_variable_domain_size(var);
     }
+    Cost max_plan_cost = Cost::MAX; // TODO: P10: Once again we simply lie about the upper bound
+    upper_bound = Cost::MAX; // TODO: P10: See above
+
+    utils::g_log << "Maximal plan cost: " << upper_bound << endl;
+    cout << endl;
 
     plan_data_base->init(vars, search_task, get_plan_manager());
 }
@@ -166,7 +163,5 @@ void SymbolicSearch::add_options_to_feature(plugins::Feature &feature) {
     SymParameters::add_options_to_feature(feature);
     feature.add_option<bool>(
         "silent", "silent mode that avoids writing the cost bounds", "false");
-    feature.add_option<bool>(
-        "simple", "simple/loopless plan construction", "false");
 }
 }
