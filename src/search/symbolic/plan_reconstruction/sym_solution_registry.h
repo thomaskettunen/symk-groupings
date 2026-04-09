@@ -72,7 +72,7 @@ public:
     virtual ~SymSolutionRegistry() = default;
 
     void register_solution(const SymSolutionCut &solution);
-    void construct_cheaper_solutions(Cost bound);
+    void construct_cheaper_solutions();
 
     bool found_k_plans() const {
         return plan_data_base && plan_data_base->found_enough_plans();
