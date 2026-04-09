@@ -24,7 +24,6 @@ SymbolicSearch::SymbolicSearch(const plugins::Options &opts)
       vars(make_shared<SymVariables>(opts, task)),
       sym_params(opts, task),
       step_num(-1),
-      lower_bound_increased(true),
       lower_bound(Cost::MIN), // NOTE: P10: The lower bound is the cost that is used to check if we have hit a cut
       upper_bound(Cost::MAX), // TODO: P10: Here we also ignore bound and just set it to max, make sure it doesn't fuck us
       min_g(Cost::MIN),
@@ -80,14 +79,14 @@ SearchStatus SymbolicSearch::step() {
 
     // Search finished!
     if (search_done) { 
-        solution_registry->construct_cheaper_solutions(Cost::MAX);
+        solution_registry->construct_cheaper_solutions();
         solution_found = plan_data_base->get_num_reported_plan() > 0;
         cur_status = solution_found ? SOLVED : FAILED;
     } else {
         // Bound increased => construct plans
-        if (lower_bound_increased && !pareto_front::dominates(lower_bound)) { // NOTE: P10: making sure the lower bound is also not dominated. may be it is slow to do this here but whatever
-            solution_registry->construct_cheaper_solutions(lower_bound); // NOTE: P10: When this is called the lower_bound is equal to the cost of the cheapest plan
-        }
+        
+        // NOTE: P10: construct_cheaper_solutions can be called no matter what it does nothing if no plan is in the cut
+        solution_registry->construct_cheaper_solutions();
 
         // All plans found
         if (solution_registry->found_k_plans()) {
@@ -107,7 +106,6 @@ SearchStatus SymbolicSearch::step() {
         utils::g_log << ", reconstruction time: " << solution_registry->get_reconstruction_time() << "s" << flush;
         utils::g_log << endl;
     }
-    lower_bound_increased = false;
 
     if (cur_status == SOLVED) {
         set_plan(plan_data_base->get_first_accepted_plan());
@@ -122,13 +120,6 @@ SearchStatus SymbolicSearch::step() {
     search->step();
 
     return cur_status;
-}
-
-void SymbolicSearch::setLowerBound(Cost lower) {
-    if (lower > lower_bound) {
-        lower_bound_increased = true;
-    }
-    lower_bound = max(lower_bound, lower);
 }
 
 void SymbolicSearch::new_solution(const SymSolutionCut &sol) {

@@ -44,7 +44,6 @@ protected:
     SymParameters sym_params; // Parameters for symbolic search
 
     int step_num;
-    bool lower_bound_increased;
     Cost lower_bound; // Lower bound of search (incl. min-action costs)
     Cost upper_bound; // Upper bound of search (not use by top_k)
     Cost min_g; // min g costs of open lists
@@ -61,8 +60,6 @@ protected:
 public:
     SymbolicSearch(const plugins::Options &opts);
     virtual ~SymbolicSearch() = default;
-
-    virtual void setLowerBound(Cost lower);
 
     virtual void setMinG(Cost g) {
         min_g = Cost::max(g, min_g);

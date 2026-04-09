@@ -57,7 +57,6 @@ bool UniformCostSearch::init(
 
     prepareBucket();
 
-    engine->setLowerBound(getF());
     engine->setMinG(getG());
 
     return true;
@@ -101,7 +100,6 @@ bool UniformCostSearch::prepareBucket() {
                 closed->insert(frontier.g(), states);
             }
         }
-        engine->setLowerBound(getF());
         engine->setMinG(getG());
     }
 
@@ -164,7 +162,6 @@ void UniformCostSearch::stepImage(int maxTime, int maxNodes) {
         prepareBucket();
     }
 
-    engine->setLowerBound(getG() + mgr->get_min_transition_cost());
     step_estimation.set_data(step_timer(), stepNodes, !res_expansion.ok);
 }
 }
