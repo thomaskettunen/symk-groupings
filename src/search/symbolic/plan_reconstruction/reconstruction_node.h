@@ -32,87 +32,56 @@ protected:
 
 public:
     ReconstructionNode() = delete;
-    ReconstructionNode(
-        Cost g, Cost h, int zero_layer, BDD states, BDD visited_staes,
-        bool fwd_reconstruction, int plan_length);
+    ReconstructionNode(Cost g, Cost h, int zero_layer, BDD states, BDD visited_staes, bool fwd_reconstruction, int plan_length);
 
-    Cost get_g() const {
-        return g;
-    }
-    Cost get_h() const {
-        return h;
-    }
-    Cost get_f() const {
-        return get_g() + get_h();
-    }
-    int get_zero_layer() const {
-        return zero_layer;
-    }
-    BDD get_states() const {
-        return states;
-    }
-    BDD get_visitied_states() const {
-        return visited_states;
-    }
+    Cost get_g() const { return g; }
+    void set_g(Cost g) { this->g = g; }
+
+    Cost get_h() const { return h; }
+    void set_h(Cost h) { this->h = h; }
+
+    Cost get_f() const { return get_g() + get_h(); }
+
+    int get_zero_layer() const { return zero_layer; }
+    void set_zero_layer(int zero_layer) { this->zero_layer = zero_layer; }
+    
+    BDD get_states() const { return states; }
+    void set_states(BDD states) { this->states = states; }
+
+    BDD get_visitied_states() const { return visited_states; }
+    void set_visited_states(BDD visited_states) { this->visited_states = visited_states; }
+    void add_visited_states(BDD newly_visited_states) { this->visited_states += newly_visited_states; }
+
+    size_t get_plan_length() const { return plan_length; }
+    void set_plan_length(size_t plan_length) { this->plan_length = plan_length; }
 
     std::shared_ptr<ReconstructionNode> get_predecessor() const;
+    void set_predecessor(const std::shared_ptr<ReconstructionNode> &predecessor, const TransitionRelationPtr &to_predecessor_tr);
+
     std::shared_ptr<ReconstructionNode> get_successor() const;
+    void set_successor(const std::shared_ptr<ReconstructionNode> &successor, const TransitionRelationPtr &to_successor_tr);
+
     TransitionRelationPtr get_to_predecessor_tr() const;
     TransitionRelationPtr get_to_successor_tr() const;
-    size_t get_plan_length() const {
-        return plan_length;
-    }
-
     std::shared_ptr<ReconstructionNode> get_origin_predecessor() const;
     std::shared_ptr<ReconstructionNode> get_origin_successor() const;
 
-    void set_g(Cost g) {
-        this->g = g;
-    }
-    void set_h(Cost h) {
-        this->h = h;
-    }
-    void set_zero_layer(int zero_layer) {
-        this->zero_layer = zero_layer;
-    }
-    void set_states(BDD states) {
-        this->states = states;
-    }
-    void set_visited_states(BDD visited_states) {
-        this->visited_states = visited_states;
-    }
-    void add_visited_states(BDD newly_visited_states) {
-        this->visited_states += newly_visited_states;
-    }
-
-    void set_predecessor(
-        const std::shared_ptr<ReconstructionNode> &predecessor,
-        const TransitionRelationPtr &to_predecessor_tr);
-    void set_successor(
-        const std::shared_ptr<ReconstructionNode> &successor,
-        const TransitionRelationPtr &to_successor_tr);
-    void set_plan_length(size_t plan_length) {
-        this->plan_length = plan_length;
-    }
-
     bool is_fwd_phase() const;
-    void set_fwd_phase(bool fwd_phase) {
-        this->fwd_phase = fwd_phase;
-    }
+    void set_fwd_phase(bool fwd_phase) { this->fwd_phase = fwd_phase; }
 
     void get_plan(Plan &plan) const;
     BDD get_middle_state(BDD initial_state) const;
 
-    friend std::ostream &operator<<(
-        std::ostream &os, const ReconstructionNode &node) {
-        return os << "symcut{g=" << node.get_g() << ", h=" << node.get_h()
+    friend std::ostream &operator<<(std::ostream &os, const ReconstructionNode &node) {
+        return os << "symcut{"
+                  << "g=" << node.get_g() 
+                  << ", h=" << node.get_h()
                   << ", f=" << node.get_f()
                   << ", zero_layer=" << node.get_zero_layer()
                   << ", fwd_phase=" << node.is_fwd_phase()
                   << ", |plan|=" << node.get_plan_length()
                   << ", nodes=" << node.get_states().nodeCount()
-                  << ", visited_nodes="
-                  << node.get_visitied_states().nodeCount()
+                  << ", visited_nodes=" << node.get_visitied_states().nodeCount()
                   // << ", states=" << node.get_states().CountMinterm(15)
                   << "}";
     }
@@ -135,58 +104,38 @@ struct CompareReconstructionNodes {
 protected:
     ReconstructionPriority prio;
 public:
-    CompareReconstructionNodes() {
-    }
-    CompareReconstructionNodes(ReconstructionPriority prio) : prio(prio) {
-    }
+    CompareReconstructionNodes() { }
+    CompareReconstructionNodes(ReconstructionPriority prio) : prio(prio) { }
 
     bool sort_by_remaining_cost(
         const ReconstructionNode &node1, const ReconstructionNode &node2) {
-        if (node2.get_f() < node1.get_f())
-            return true;
-        if (node2.get_f() > node1.get_f())
-            return false;
-        if (node2.get_g() < node1.get_g())
-            return true;
-        if (node2.get_g() > node1.get_g())
-            return false;
-        if (!node2.is_fwd_phase() && node1.is_fwd_phase())
-            return true;
-        if (node2.is_fwd_phase() && !node1.is_fwd_phase())
-            return false;
-        if (node2.get_zero_layer() < node1.get_zero_layer())
-            return true;
-        if (node2.get_zero_layer() > node1.get_zero_layer())
-            return false;
+        if (node2.get_f() < node1.get_f()) return true;
+        if (node2.get_f() > node1.get_f()) return false;
+        if (node2.get_g() < node1.get_g()) return true;
+        if (node2.get_g() > node1.get_g()) return false;
+        if (!node2.is_fwd_phase() && node1.is_fwd_phase()) return true;
+        if (node2.is_fwd_phase() && !node1.is_fwd_phase()) return false;
+        if (node2.get_zero_layer() < node1.get_zero_layer()) return true;
+        if (node2.get_zero_layer() > node1.get_zero_layer()) return false;
         return node2.get_plan_length() > node1.get_plan_length();
     }
 
     bool sort_by_plan_length(
         const ReconstructionNode &node1, const ReconstructionNode &node2) {
-        if (node2.get_plan_length() < node1.get_plan_length())
-            return true;
-        if (node2.get_plan_length() > node1.get_plan_length())
-            return false;
-        if (node2.get_f() < node1.get_f())
-            return true;
-        if (node2.get_f() > node1.get_f())
-            return false;
-        if (node2.get_g() < node1.get_g())
-            return true;
-        if (node2.get_g() > node1.get_g())
-            return false;
+        if (node2.get_plan_length() < node1.get_plan_length()) return true;
+        if (node2.get_plan_length() > node1.get_plan_length()) return false;
+        if (node2.get_f() < node1.get_f()) return true;
+        if (node2.get_f() > node1.get_f()) return false;
+        if (node2.get_g() < node1.get_g()) return true;
+        if (node2.get_g() > node1.get_g()) return false;
         return !node2.is_fwd_phase() && node1.is_fwd_phase();
     }
 
-    bool operator()(
-        const ReconstructionNode &node1, const ReconstructionNode &node2) {
+    bool operator()(const ReconstructionNode &node1, const ReconstructionNode &node2) {
         switch (prio) {
-        case ReconstructionPriority::REMAINING_COST:
-            return sort_by_remaining_cost(node1, node2);
-        case ReconstructionPriority::PLAN_LENGTH:
-            return sort_by_plan_length(node1, node2);
-        default:
-            utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
+            case ReconstructionPriority::REMAINING_COST: return sort_by_remaining_cost(node1, node2);
+            case ReconstructionPriority::PLAN_LENGTH: return sort_by_plan_length(node1, node2);
+            default: utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
         }
         utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
         return false;

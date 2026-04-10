@@ -25,8 +25,13 @@ void SymSolutionRegistry::reconstruct_plans( // NOTE: P10: When this is called w
         if(pareto_front::dominates(sym_cut.get_f())) continue; // NOTE: P10: if the current plan is dominated we should just not even push it to the queue
 
         ReconstructionNode cur_node(
-            sym_cut.get_g(), sym_cut.get_h(), std::numeric_limits<int>::max(),
-            sym_cut.get_cut(), sym_vars->zeroBDD(), fw_closed != nullptr, 0);
+            sym_cut.get_g(), 
+            sym_cut.get_h(), 
+            std::numeric_limits<int>::max(), 
+            sym_cut.get_cut(), 
+            sym_vars->zeroBDD(), 
+            fw_closed != nullptr, 0
+        );
         queue.push(cur_node);
 
         // In the bidirectional case we might can directly swap the direction
@@ -41,18 +46,14 @@ void SymSolutionRegistry::reconstruct_plans( // NOTE: P10: When this is called w
 
     if (!queue.empty()) {
         symbolic::Cost cost = queue.top().get_f();
-        
-        if (pareto_front::dominates(cost)) {
-            utils::g_log << "dominated " << cost << std::endl;
-        }else{
-            utils::g_log << "found non dominated plan: " << cost << std::endl;
-        }
-            
+
+        if (pareto_front::dominates(cost)) { utils::g_log << "dominated " << cost << std::endl; } 
+        else { utils::g_log << "found non dominated plan: " << cost << std::endl; }
+
         pareto_front::insert(cost); // NOTE: P10: we get the total price for the current plan we want
         // NOTE: P10: the queue for some reason finds all possible reorderings, where the hell does it do this
     }
 
-    // While queue is not empty
     while (!queue.empty()) { // NOTE: P10: for some reason the queue counts down until it reaches the cost[0,0,0] ??? and none of these will ever be dominated obviously
         ReconstructionNode cur_node = queue.top();
         queue.pop();
@@ -62,15 +63,11 @@ void SymSolutionRegistry::reconstruct_plans( // NOTE: P10: When this is called w
             BDD state_bdd = sym_vars->getSinglePrimaryStateFrom(cur_node.get_states());
             ReconstructionNode remaining_node = cur_node;
             remaining_node.set_states(remaining_node.get_states() * !state_bdd);
-            if (sym_vars->numStates(remaining_node.get_states()) > 0) {
-                queue.push(remaining_node);
-            }
+            if (sym_vars->numStates(remaining_node.get_states()) > 0) { queue.push(remaining_node); }
             assert(sym_vars->numStates(remaining_node.get_states()) > 0 || remaining_node.get_states() == sym_vars->zeroBDD());
             cur_node.set_states(state_bdd);
         }
         cur_node.add_visited_states(cur_node.get_states());
-
-        // utils::g_log << cur_node << endl;
 
         assert(sym_vars->numStates(cur_node.get_states()) > 0);
         assert(sym_vars->numStates(cur_node.get_states()) == 1);
@@ -100,7 +97,7 @@ void SymSolutionRegistry::reconstruct_plans( // NOTE: P10: When this is called w
 
 void SymSolutionRegistry::expand_actions(const ReconstructionNode &node) {
     bool fwd = node.is_fwd_phase();
-    Cost cur_cost = Cost::MIN; // NOTE: P10: Uninitialized is what it should be haha
+    Cost cur_cost = Cost::INVALID; // NOTE: P10: Placeholder, overwritten in each of the two cases below.
     shared_ptr<ClosedList> cur_closed_list;
 
     if (fwd) {
@@ -113,18 +110,15 @@ void SymSolutionRegistry::expand_actions(const ReconstructionNode &node) {
 
     // Traverse in oposite direction to first consider actions with higher costs
     // Mostly relevant for single solution reconstruction
-    const auto &trs =
-        sym_transition_relations->get_individual_transition_relations();
+    const auto &trs = sym_transition_relations->get_individual_transition_relations();
     for (auto it = trs.rbegin(); it != trs.rend(); ++it) {
-        Cost op_cost = it->first;
+        auto &[op_cost, transition_relations] = *it;
         Cost new_cost = cur_cost - op_cost;
 
         // new cost can not be negative
-        if (new_cost < Cost::MIN) {
-            continue;
-        }
+        if (new_cost < Cost::MIN) { continue; }
 
-        for (auto tr : it->second) {
+        for (auto tr : transition_relations) {
             BDD closed_states = cur_closed_list->get_closed_at(new_cost);
             BDD succ = fwd ? tr->preimage(node.get_states(), closed_states)
                            : tr->image(node.get_states());
@@ -132,71 +126,67 @@ void SymSolutionRegistry::expand_actions(const ReconstructionNode &node) {
             BDD intersection = succ * closed_states;
             int layer_id = 0;
             if (op_cost == Cost::MIN)
-                layer_id =
-                    cur_closed_list->get_zero_cut(new_cost, intersection);
+                layer_id = cur_closed_list->get_zero_cut(new_cost, intersection);
 
             // Ignore states we have already visited
             intersection *= !node.get_visitied_states();
 
-            if (intersection.IsZero()) {
-                continue;
-            }
+            if (intersection.IsZero()) { continue; }
 
             ReconstructionNode new_node(
-                Cost::INVALID, Cost::INVALID, layer_id, intersection, node.get_visitied_states(), fwd,
-                node.get_plan_length() + 1);
+                Cost::INVALID,
+                 Cost::INVALID,
+                 layer_id,
+                 intersection,
+                 node.get_visitied_states(),
+                 fwd,
+                 node.get_plan_length() + 1
+            );
+
             if (fwd) {
                 new_node.set_g(new_cost);
                 new_node.set_h(node.get_h());
-                new_node.set_predecessor(
-                    make_shared<ReconstructionNode>(node), tr);
+                new_node.set_predecessor(make_shared<ReconstructionNode>(node), tr);
             } else {
                 new_node.set_g(node.get_g());
                 new_node.set_h(new_cost);
-                new_node.set_successor(
-                    make_shared<ReconstructionNode>(node), tr);
+                new_node.set_successor(make_shared<ReconstructionNode>(node), tr);
             }
 
             // We have sucessfully reconstructed to the initial state
             if (swap_to_bwd_phase(new_node)) {
-                assert(
-                    fw_closed->get_start_states() * new_node.get_states() !=
-                    sym_vars->zeroBDD());
-                BDD middle_state =
-                    new_node.get_middle_state(fw_closed->get_start_states());
+                assert(fw_closed->get_start_states() * new_node.get_states() != sym_vars->zeroBDD());
+                BDD middle_state = new_node.get_middle_state(fw_closed->get_start_states());
                 ReconstructionNode bw_node(
-                    Cost::MIN, new_node.get_h(), 0,
-                    middle_state, new_node.get_visitied_states(), false,
-                    node.get_plan_length() + 1);
-                bw_node.set_predecessor(
-                    make_shared<ReconstructionNode>(node), tr);
+                    Cost::MIN, 
+                    new_node.get_h(),
+                    0,
+                    middle_state,
+                    new_node.get_visitied_states(),
+                    false,
+                    node.get_plan_length() + 1
+                );
+
+                bw_node.set_predecessor(make_shared<ReconstructionNode>(node), tr);
 
                 // Add init state to visited states
                 bw_node.add_visited_states(fw_closed->get_start_states());
 
-                if (!pareto_front::dominates(bw_node.get_f())) {
-                    queue.push(bw_node);
-                }
+                if (!pareto_front::dominates(bw_node.get_f())) { queue.push(bw_node); }
             } else {
-                if (!pareto_front::dominates(new_node.get_f())) {
-                    queue.push(new_node);
-                }
+                if (!pareto_front::dominates(new_node.get_f())) { queue.push(new_node); }
             }
         }
     }
 }
 
-bool SymSolutionRegistry::swap_to_bwd_phase(
-    const ReconstructionNode &node) const {
-    return bw_closed && node.is_fwd_phase() && node.get_g() == Cost::MIN &&
-           !(node.get_states() * fw_closed->get_start_states()).IsZero();
+bool SymSolutionRegistry::swap_to_bwd_phase(const ReconstructionNode &node) const {
+    return bw_closed && node.is_fwd_phase() && node.get_g() == Cost::MIN && !(node.get_states() * fw_closed->get_start_states()).IsZero();
 }
 
 bool SymSolutionRegistry::is_solution(const ReconstructionNode &node) const {
-    if (node.get_f() > Cost::MIN)
-        return false;
-    if (bw_closed && node.is_fwd_phase())
-        return false;
+    if (node.get_f() > Cost::MIN) return false;
+    if (bw_closed && node.is_fwd_phase()) return false;
     shared_ptr<ClosedList> closed = node.is_fwd_phase() ? fw_closed : bw_closed;
     return !(node.get_states() * closed->get_start_states()).IsZero();
 }
@@ -220,8 +210,7 @@ void SymSolutionRegistry::init(
 
     // If unit costs we simple use sort by remaining cost
     if (sym_transition_relations->has_unit_cost()) {
-        queue = ReconstructionQueue(
-            CompareReconstructionNodes(ReconstructionPriority::REMAINING_COST));
+        queue = ReconstructionQueue(CompareReconstructionNodes(ReconstructionPriority::REMAINING_COST));
     }
 
     reconstruction_timer.stop();
@@ -230,8 +219,7 @@ void SymSolutionRegistry::init(
 
 void SymSolutionRegistry::register_solution(const SymSolutionCut &solution) {
     bool merged = false;
-    size_t pos = 0;
-    for (; pos < sym_cuts[solution.get_f()].size(); pos++) {
+    for (size_t pos = 0; pos < sym_cuts[solution.get_f()].size(); ++pos) {
         // a cut with same g and h values exist
         // => we combine the cut to avoid multiple cuts with same solutions
         if (sym_cuts[solution.get_f()][pos] == solution) {
@@ -240,9 +228,7 @@ void SymSolutionRegistry::register_solution(const SymSolutionCut &solution) {
             break;
         }
     }
-    if (!merged) {
-        sym_cuts[solution.get_f()].push_back(solution);
-    }
+    if (!merged) { sym_cuts[solution.get_f()].push_back(solution); }
 }
 
 void SymSolutionRegistry::construct_cheaper_solutions() {

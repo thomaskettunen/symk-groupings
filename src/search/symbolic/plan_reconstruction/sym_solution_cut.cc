@@ -7,43 +7,24 @@
 using namespace std;
 
 namespace symbolic {
-SymSolutionCut::SymSolutionCut() : g(Cost::INVALID), h(Cost::INVALID) { // TODO: P10: Is INVALID correct here? Before it was -1
-}
+SymSolutionCut::SymSolutionCut() : g(Cost::INVALID), h(Cost::INVALID) { }
 
-SymSolutionCut::SymSolutionCut(Cost g, Cost h, BDD cut) : g(g), h(h), cut(cut) {
-}
+SymSolutionCut::SymSolutionCut(Cost g, Cost h, BDD cut) : g(g), h(h), cut(cut) { }
 
-Cost SymSolutionCut::get_g() const {
-    return g;
-}
+Cost SymSolutionCut::get_g() const { return g; }
+void SymSolutionCut::set_g(Cost g) { this->g = g; }
 
-Cost SymSolutionCut::get_h() const {
-    return h;
-}
+Cost SymSolutionCut::get_h() const { return h; }
+void SymSolutionCut::set_h(Cost h) { this->h = h; }
 
-Cost SymSolutionCut::get_f() const {
-    return g + h;
-}
+Cost SymSolutionCut::get_f() const { return g + h; }
 
-BDD SymSolutionCut::get_cut() const {
-    return cut;
-}
+BDD SymSolutionCut::get_cut() const { return cut; }
+void SymSolutionCut::set_cut(BDD cut) { this->cut = cut; }
 
 void SymSolutionCut::merge(const SymSolutionCut &other) {
     assert(*this == other);
     cut += other.get_cut();
-}
-
-void SymSolutionCut::set_g(Cost g) {
-    this->g = g;
-}
-
-void SymSolutionCut::set_h(Cost h) {
-    this->h = h;
-}
-
-void SymSolutionCut::set_cut(BDD cut) {
-    this->cut = cut;
 }
 
 bool SymSolutionCut::operator<(const SymSolutionCut &other) const {
