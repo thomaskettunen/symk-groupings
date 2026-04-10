@@ -5,8 +5,7 @@
 
 #include "../../task_utils/task_properties.h"
 #include "../../tasks/cost_adapted_task.h"
-#include "../plan_selection/plan_selector.h"
-#include "../searches/bidirectional_search.h"
+#include "../plan_selection/top_k_selector.h"
 #include "../searches/top_k_uniform_cost_search.h"
 #include "../searches/uniform_cost_search.h"
 
@@ -27,7 +26,7 @@ SymbolicSearch::SymbolicSearch(const plugins::Options &opts)
       lower_bound(Cost::MIN), // NOTE: P10: The lower bound is the cost that is used to check if we have hit a cut
       upper_bound(Cost::MAX), // TODO: P10: Here we also ignore bound and just set it to max, make sure it doesn't fuck us
       min_g(Cost::MIN),
-      plan_data_base(opts.get<shared_ptr<PlanSelector>>("plan_selection")),
+      plan_data_base(make_shared<TopKSelector>(opts.get<int>("k"))),
       solution_registry(make_shared<SymSolutionRegistry>()),
       silent(opts.get<bool>("silent")) {
     cout << endl;
