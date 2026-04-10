@@ -33,14 +33,14 @@ void TopkSymbolicUniformCostSearch::initialize() {
     );
 
     if (fw && bw) {
-        search = unique_ptr<BidirectionalSearch>(new BidirectionalSearch(this, sym_params, move(fw_search), move(bw_search)));
+        search = unique_ptr<BidirectionalSearch>(new BidirectionalSearch(this, sym_params, move(fw_search), move(bw_search), alternating));
     } else {
         search.reset(fw ? fw_search.release() : bw_search.release());
     }
 }
 
 TopkSymbolicUniformCostSearch::TopkSymbolicUniformCostSearch(
-    const plugins::Options &opts, bool fw, bool bw, bool alternating): SymbolicUniformCostSearch(opts, fw, bw, alternating) {
+    const plugins::Options &opts, bool fw, bool bw, bool alternating): SymbolicSearch(opts), fw(fw), bw(bw), alternating(alternating) {
 }
 
 void TopkSymbolicUniformCostSearch::new_solution(const SymSolutionCut &sol) {
@@ -57,7 +57,7 @@ public:
         document_title("Topk Symbolic Forward Uniform Cost Search");
         document_synopsis("");
         symbolic::SymbolicSearch::add_options_to_feature(*this);
-        this->add_option<shared_ptr<symbolic::PlanSelector>>("plan_selection", "plan selection strategy");
+        this->add_option<int>("k", "number of plans");
     }
 
     virtual shared_ptr<TopkSymbolicUniformCostSearch> create_component(const plugins::Options &options) const override {
@@ -73,7 +73,7 @@ public:
         document_title("Topk Symbolic Backward Uniform Cost Search");
         document_synopsis("");
         symbolic::SymbolicSearch::add_options_to_feature(*this);
-        this->add_option<shared_ptr<symbolic::PlanSelector>>("plan_selection", "plan selection strategy");
+        this->add_option<int>("k", "number of plans");
     }
 
     virtual shared_ptr<TopkSymbolicUniformCostSearch> create_component(const plugins::Options &options) const override {
@@ -89,7 +89,7 @@ public:
         document_title("Topk Symbolic Bidirectional Uniform Cost Search");
         document_synopsis("");
         symbolic::SymbolicSearch::add_options_to_feature(*this);
-        this->add_option<shared_ptr<symbolic::PlanSelector>>("plan_selection", "plan selection strategy");
+        this->add_option<int>("k", "number of plans");
         this->add_option<bool>("alternating", "alternating", "false");
     }
 

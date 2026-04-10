@@ -21,7 +21,7 @@ class Options;
 namespace symbolic {
 class SymStateSpaceManager;
 class SymSearch;
-class PlanSelector;
+class TopKSelector;
 class SymVariables;
 
 class SymbolicSearch : public SearchAlgorithm {
@@ -48,7 +48,7 @@ protected:
     Cost upper_bound; // Upper bound of search (not use by top_k)
     Cost min_g; // min g costs of open lists
 
-    std::shared_ptr<PlanSelector> plan_data_base;
+    std::shared_ptr<TopKSelector> plan_data_base;
     std::shared_ptr<SymSolutionRegistry> solution_registry; // Solution registry
 
     bool silent;

@@ -11,7 +11,7 @@
 #include "../../state_registry.h"
 #include "../../task_proxy.h"
 #include "../../utils/timer.h"
-#include "../plan_selection/plan_selector.h"
+#include "../plan_selection/top_k_selector.h"
 
 #include <queue>
 
@@ -35,7 +35,7 @@ protected:
     std::shared_ptr<SymVariables> sym_vars;
     std::shared_ptr<ClosedList> fw_closed;
     std::shared_ptr<ClosedList> bw_closed;
-    std::shared_ptr<PlanSelector> plan_data_base;
+    std::shared_ptr<TopKSelector> plan_data_base;
     std::shared_ptr<SymTransitionRelations> sym_transition_relations;
 
     utils::Timer reconstruction_timer;
@@ -66,7 +66,7 @@ public:
         std::shared_ptr<symbolic::ClosedList> fw_closed,
         std::shared_ptr<symbolic::ClosedList> bw_closed,
         std::shared_ptr<SymTransitionRelations> sym_transition_relations,
-        std::shared_ptr<PlanSelector> plan_data_base
+        std::shared_ptr<TopKSelector> plan_data_base
     );
 
     virtual ~SymSolutionRegistry() = default;

@@ -210,7 +210,7 @@ void SymSolutionRegistry::init(
     shared_ptr<symbolic::ClosedList> fw_closed,
     shared_ptr<symbolic::ClosedList> bw_closed,
     shared_ptr<SymTransitionRelations> sym_transition_relations,
-    shared_ptr<PlanSelector> plan_data_base
+    shared_ptr<TopKSelector> plan_data_base
 ) {
     this->sym_vars = sym_vars;
     this->plan_data_base = plan_data_base;
