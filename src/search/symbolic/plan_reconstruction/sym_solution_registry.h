@@ -1,29 +1,25 @@
 #ifndef SYMBOLIC_PLAN_RECONSTRUCTION_SYM_SOLUTION_REGISTRY_H
 #define SYMBOLIC_PLAN_RECONSTRUCTION_SYM_SOLUTION_REGISTRY_H
 
+#include <queue>
+
 #include "reconstruction_node.h"
 #include "sym_solution_cut.h"
 
+#include "../cost.h"
 #include "../sym_transition_relations.h"
 #include "../sym_variables.h"
+#include "../plan_selection/top_k_selector.h"
 
 #include "../../plan_manager.h"
 #include "../../state_registry.h"
 #include "../../task_proxy.h"
 #include "../../utils/timer.h"
-#include "../plan_selection/top_k_selector.h"
-
-#include <queue>
-
-#include "../cost.h"
 
 namespace symbolic {
 // We would like to use the prio queue implemented in FD but it requires
 // integer values as prio and we have a more complex comparision
-typedef std::priority_queue<
-    ReconstructionNode, std::vector<ReconstructionNode>,
-    CompareReconstructionNodes>
-    ReconstructionQueue;
+typedef std::priority_queue<ReconstructionNode, std::vector<ReconstructionNode>, CompareReconstructionNodes> ReconstructionQueue;
 
 class UniformCostSearch;
 class ClosedList;
@@ -31,7 +27,6 @@ class ClosedList;
 class SymSolutionRegistry {
 protected:
     std::map<Cost, std::vector<SymSolutionCut>> sym_cuts;
-
     std::shared_ptr<SymVariables> sym_vars;
     std::shared_ptr<ClosedList> fw_closed;
     std::shared_ptr<ClosedList> bw_closed;
@@ -45,18 +40,12 @@ protected:
     ReconstructionQueue queue;
 
     void add_plan(const Plan &plan) const;
-
     void reconstruct_plans(const std::vector<SymSolutionCut> &sym_cuts);
-
     void expand_actions(const ReconstructionNode &node);
-
     bool swap_to_bwd_phase(const ReconstructionNode &node) const;
-
     bool is_solution(const ReconstructionNode &node) const;
 
-    bool task_has_zero_costs() const {
-        return sym_transition_relations->has_zero_cost_transition();
-    }
+    bool task_has_zero_costs() const { return sym_transition_relations->has_zero_cost_transition(); }
 
 public:
     SymSolutionRegistry();
@@ -74,15 +63,11 @@ public:
     void register_solution(const SymSolutionCut &solution);
     void construct_cheaper_solutions();
 
-    bool found_k_plans() const {
-        return plan_data_base && plan_data_base->found_enough_plans();
-    }
+    bool found_k_plans() const { return plan_data_base && plan_data_base->found_enough_plans(); }
 
     int get_num_found_plans() const {
-        if (plan_data_base == nullptr) {
-            return 0;
-        }
-        return plan_data_base->get_num_accepted_plans();
+        if (plan_data_base == nullptr) { return 0; }
+        else { return plan_data_base->get_num_accepted_plans(); }
     }
 
     BDD get_states_on_goal_paths() const {
@@ -91,19 +76,12 @@ public:
 
     Cost cheapest_solution_cost_found() const {
         Cost cheapest = Cost::MAX;
-        if (plan_data_base) {
-            cheapest =
-                Cost::min(cheapest, plan_data_base->get_first_plan_cost());
-        }
-        if (sym_cuts.size() > 0) {
-            cheapest = Cost::min(cheapest, sym_cuts.begin()->first);
-        }
+        if (plan_data_base) { cheapest = Cost::min(cheapest, plan_data_base->get_first_plan_cost()); }
+        if (sym_cuts.size() > 0) { cheapest = Cost::min(cheapest, sym_cuts.begin()->first); }
         return cheapest;
     }
 
-    double get_reconstruction_time() const {
-        return reconstruction_timer();
-    }
+    double get_reconstruction_time() const { return reconstruction_timer(); }
 };
 }
 
