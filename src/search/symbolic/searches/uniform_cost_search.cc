@@ -136,7 +136,7 @@ void UniformCostSearch::stepImage(int maxTime, int maxNodes) {
     ResultExpansion res_expansion = frontier.expand(maxTime, maxNodes, fw);
 
     if (res_expansion.ok) {
-        utils::g_log << "expanded frontier : " << frontier.g() << std::endl;
+        utils::g_log << "expanded frontier [" << (fw ? "->" : "<-") << "]: " << frontier.g() << std::endl;
         lastStepCost = false; // Must be set to false before calling checkCut
         // Process Simg, removing duplicates and computing h. Store in Sfilter
         // and reopen. Include new states in the open list
