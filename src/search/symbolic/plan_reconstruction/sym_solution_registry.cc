@@ -246,17 +246,15 @@ void SymSolutionRegistry::register_solution(const SymSolutionCut &solution) {
 }
 
 void SymSolutionRegistry::construct_cheaper_solutions() {
-    for (const auto &[plan_cost, cuts] : sym_cuts) {
-        
-        if (found_k_plans())
-            break;
+    for (auto it = sym_cuts.begin(); it != sym_cuts.end();) {
+        const auto& [cost, cuts] = *it;
+        if (found_k_plans()) break;
 
         reconstruction_timer.resume();
-        reconstruct_plans(cuts); // NOTE: P10: we also filter plans in here
+        reconstruct_plans(cuts);
         reconstruction_timer.stop();
+
+        it = sym_cuts.erase(it);
     }
-
-    // NOTE: P10: i dont know if it will cause a problem but removed the part here that removed cuts
-
 }
 }
