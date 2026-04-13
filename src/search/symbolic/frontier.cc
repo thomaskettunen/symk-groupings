@@ -19,6 +19,11 @@ void Frontier::set(Cost g, Bucket &bdd) {
     Sfilter.swap(bdd);
 }
 
+void Frontier::clear(){ // clears only Sfilter
+    assert(Smerge.empty() && Szero.empty() && S.empty());
+    Bucket().swap(Sfilter);
+}
+
 /// @brief Filters dominated states from the closed-list out of the frontier.
 ///
 ///        I.e. if the frontier has cost (1 2 3) and contains state s1, which is found in the closed-list with any cost dominating (1 2 3), e.g. cost (1 1 1), s1 will be removed from the frontier.

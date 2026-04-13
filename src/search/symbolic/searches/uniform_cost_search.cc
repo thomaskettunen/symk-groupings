@@ -14,6 +14,7 @@
 #include <string>
 
 #include "../cost.h"
+#include "../pareto_front.h"
 
 using namespace std;
 
@@ -24,6 +25,7 @@ UniformCostSearch::UniformCostSearch(
       fw(true),
       step_estimation(0, 0, false),
       closed(make_shared<ClosedList>()),
+      open_list(make_shared<OpenList>()),
       lastStepCost(true),
       last_g_cost(Cost::MIN) {
 }
@@ -45,6 +47,7 @@ bool UniformCostSearch::init(
 
     if (opposite_search) {
         perfectHeuristic = opposite_search->getClosedShared();
+        oppositeOpenList = opposite_search->open_list;
     } else {
         perfectHeuristic = make_shared<ClosedList>();
         perfectHeuristic->init(mgr.get());
@@ -78,18 +81,31 @@ void UniformCostSearch::checkFrontierCut(Bucket &bucket, Cost g) {
 }
 
 bool UniformCostSearch::provable_no_more_plans() {
-    return open_list.empty();
+    return open_list->empty();
 }
 
 bool UniformCostSearch::prepareBucket() {
     if (!frontier.bucketReady()) { // NOTE: P10: Is this check really required?
         while (frontier.empty()) {
-            if(open_list.empty()) { // NOTE: P10: hacky solution to stop when frontier is empty do not forge
+            if(open_list->empty()) { // NOTE: P10: hacky solution to stop when frontier is empty do not forge
                 engine->search_done = true;
                 return true;
             }
-            open_list.pop(frontier);
+            open_list->pop(frontier);
             last_g_cost = frontier.g();
+            if (oppositeOpenList) {
+                bool dominated = !oppositeOpenList->open.empty();
+                for (auto &[cost, bucket] : oppositeOpenList->open) {
+                    if (!pareto_front::dominates(last_g_cost + cost)) {
+                        dominated = false;
+                        break;
+                    }
+                }
+                if (dominated){
+                    frontier.clear();
+                    continue;
+                }
+            }
             checkFrontierCut(frontier.bucket(), frontier.g()); // TODO: P10: What this do?
             filterFrontier();
         }
@@ -151,14 +167,14 @@ void UniformCostSearch::stepImage(int maxTime, int maxNodes) {
                 for (auto &bdd : bucket) {
                     if (!bdd.IsZero()) {
                         stepNodes = max(stepNodes, bdd.nodeCount());
-                        open_list.insert(bdd, cost);
+                        open_list->insert(bdd, cost);
                     }
                 }
             }
         }
     }
 
-    while (!frontier.bucketReady() && !open_list.empty()) {
+    while (!frontier.bucketReady() && !open_list->empty()) {
         prepareBucket();
     }
 

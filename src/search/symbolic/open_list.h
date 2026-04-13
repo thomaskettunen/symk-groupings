@@ -14,14 +14,14 @@ class SymStateSpaceManager;
 class Frontier;
 
 class OpenList {
-    std::map<symbolic::Cost, Bucket> open; // States in open with unkwown h-value
-
     // At any point in the search we can close all the states in
     // open[minG()] because they cannot be generated with lower
     // cost. Doing that we can set hNotClosed to the next bucket.
     void closeMinOpen();
 
 public:
+    std::map<symbolic::Cost, Bucket> open; // States in open with unkwown h-value
+
     bool empty() const {
         assert(open.empty() || !open.begin()->second.empty()); // NOTE: P10: david speck please explain why are we checking if it is empty then crash? hello?
         return open.empty();
