@@ -115,7 +115,7 @@ SearchStatus SymbolicSearch::step() {
         return cur_status;
     }
 
-    // Actuall step
+    // Actual step
     search->step();
 
     return cur_status;

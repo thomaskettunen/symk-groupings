@@ -14,8 +14,7 @@ void SymSolutionRegistry::add_plan(const Plan &plan) const {
     plan_data_base->add_plan(plan);
 }
 
-void SymSolutionRegistry::reconstruct_plans( // NOTE: P10: When this is called we already know what some plan cost is
-    const vector<SymSolutionCut> &sym_cuts) {
+void SymSolutionRegistry::reconstruct_plans ( const vector<SymSolutionCut> &sym_cuts ) {
     assert(queue.empty());
 
     for (const SymSolutionCut &sym_cut : sym_cuts) {
