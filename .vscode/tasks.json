@@ -5,7 +5,7 @@
       "label": "clean-plans",
       "type": "shell",
       "command": "rm",
-      "args": ["-f", "${workspaceFolder}/sas_plan.*"],
+      "args": ["-f", "${workspaceFolder}/sas_plan*"],
       "group": "build",
       "problemMatcher": [],
     },
