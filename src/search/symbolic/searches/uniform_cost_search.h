@@ -41,11 +41,12 @@ protected:
 
     // Current state of the search:
     std::shared_ptr<ClosedList> closed; // Closed list is a shared ptr to share
-    OpenList open_list;
+    std::shared_ptr<OpenList> open_list;
     Frontier frontier;
 
     // Opposite direction. Mostly relevant when bidirectional search ist used
     std::shared_ptr<ClosedList> perfectHeuristic;
+    std::shared_ptr<OpenList> oppositeOpenList; 
 
     bool lastStepCost; // If the last step was a cost step (to know if we are in
                        // estimationDisjCost or Zero)
@@ -85,7 +86,7 @@ public:
     virtual ~UniformCostSearch() = default;
 
     virtual bool finished() const override {
-        return open_list.empty() && frontier.empty();
+        return open_list->empty() && frontier.empty();
     }
 
     void step() override {
@@ -107,11 +108,11 @@ public:
         UniformCostSearch *opposite_search); // Init forward or backward search
 
     virtual Cost getF() const override {
-        return open_list.minNextG(frontier, mgr->get_min_transition_cost());
+        return open_list->minNextG(frontier, mgr->get_min_transition_cost());
     }
 
     virtual Cost getG() const {
-        return frontier.empty() ? open_list.minG() : frontier.g();
+        return frontier.empty() ? open_list->minG() : frontier.g();
     }
 
     std::shared_ptr<ClosedList> getClosedShared() const {

@@ -66,6 +66,7 @@ public:
 
     void init(SymStateSpaceManager *mgr, const BDD &bdd);
     void set(Cost g, Bucket &open);
+    void clear();
 
     Result prepare(int maxTime, int maxNodes, bool fw, bool initialization);
 
