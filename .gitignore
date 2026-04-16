@@ -14,3 +14,6 @@ __pycache__/
 /src/search/ext/cudd-3.0.0/configure~
 /src/search/ext/cudd-3.0.0/config.h.in
 /src/search/ext/cudd-3.0.0/config.h.in~
+
+#experiments
+/experiments/data
