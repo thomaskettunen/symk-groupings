@@ -5,6 +5,8 @@
 #include "../searches/bidirectional_search.h"
 #include "../searches/top_k_uniform_cost_search.h"
 
+#include "../grouping.h"
+
 #include <memory>
 
 using namespace std;
@@ -40,8 +42,18 @@ void TopkSymbolicUniformCostSearch::initialize() {
 }
 
 TopkSymbolicUniformCostSearch::TopkSymbolicUniformCostSearch(
-    const plugins::Options &opts, bool fw, bool bw, bool alternating): SymbolicSearch(opts), fw(fw), bw(bw), alternating(alternating) {
-}
+    const plugins::Options &opts,
+    bool fw,
+    bool bw,
+    std::shared_ptr<grouping::GroupingFunction> grouping_function,
+    bool alternating
+) :
+    SymbolicSearch(opts),
+    fw(fw),
+    bw(bw),
+    grouping_function(grouping_function),
+    alternating(alternating)
+{ }
 
 void TopkSymbolicUniformCostSearch::new_solution(const SymSolutionCut &sol) {
     if (!solution_registry->found_k_plans()) {
@@ -58,11 +70,12 @@ public:
         document_synopsis("");
         symbolic::SymbolicSearch::add_options_to_feature(*this);
         this->add_option<int>("k", "number of plans");
+        this->add_option<std::shared_ptr<grouping::GroupingFunction>>("grouping", "grouping", "none");
     }
 
     virtual shared_ptr<TopkSymbolicUniformCostSearch> create_component(const plugins::Options &options) const override {
         utils::g_log << "Search Algorithm: Topk Symbolic Forward Uniform Cost Search" << endl;
-        return make_shared<TopkSymbolicUniformCostSearch>(options, true, false);
+        return make_shared<TopkSymbolicUniformCostSearch>(options, true, false, options.get<std::shared_ptr<grouping::GroupingFunction>>("grouping"));
     }
 };
 static plugins::FeaturePlugin<TopkSymbolicForwardUniformCostSearchFeature> _fw_plugin;
@@ -74,11 +87,12 @@ public:
         document_synopsis("");
         symbolic::SymbolicSearch::add_options_to_feature(*this);
         this->add_option<int>("k", "number of plans");
+        this->add_option<std::shared_ptr<grouping::GroupingFunction>>("grouping", "grouping", "none");
     }
 
     virtual shared_ptr<TopkSymbolicUniformCostSearch> create_component(const plugins::Options &options) const override {
         utils::g_log << "Search Algorithm: Topk Symbolic Backward Uniform Cost Search" << endl;
-        return make_shared<TopkSymbolicUniformCostSearch>(options, false, true);
+        return make_shared<TopkSymbolicUniformCostSearch>(options, false, true, options.get<std::shared_ptr<grouping::GroupingFunction>>("grouping"));
     }
 };
 static plugins::FeaturePlugin<TopkSymbolicBackwardUniformCostSearchFeature> _bw_plugin;
@@ -91,12 +105,13 @@ public:
         symbolic::SymbolicSearch::add_options_to_feature(*this);
         this->add_option<int>("k", "number of plans");
         this->add_option<bool>("alternating", "alternating", "false");
+        this->add_option<std::shared_ptr<grouping::GroupingFunction>>("grouping", "grouping", "none");
     }
 
     virtual shared_ptr<TopkSymbolicUniformCostSearch> create_component(
         const plugins::Options &options) const override {
         utils::g_log << "Search Algorithm: Topk Symbolic Bidirectional Uniform Cost Search" << endl;
-        return make_shared<TopkSymbolicUniformCostSearch>(options, true, true, options.get<bool>("alternating"));
+        return make_shared<TopkSymbolicUniformCostSearch>(options, true, true, options.get<std::shared_ptr<grouping::GroupingFunction>>("grouping"), options.get<bool>("alternating"));
     }
 };
 static plugins::FeaturePlugin<TopkSymbolicBidirectionalUniformCostSearchFeature> _bd_plugin;

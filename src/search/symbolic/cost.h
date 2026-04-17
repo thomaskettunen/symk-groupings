@@ -1,7 +1,7 @@
 #ifndef COST_H
 #define COST_H
 
-#include "cost.h"
+#include "grouping.h"
 #include "../plan_manager.h"
 #include "../utils/hash.h"
 #include "../abstract_task.h"
@@ -12,8 +12,6 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
-
-using GroupID = int;
 
 namespace symbolic {
     enum CostMagicFlags {
@@ -26,8 +24,8 @@ namespace symbolic {
 
     class Cost {
         public:
-            explicit Cost(std::unordered_map<GroupID, int> map);
             explicit Cost() = delete;
+            explicit Cost(std::unordered_map<grouping::GroupID, int> map);
             Cost(std::shared_ptr<AbstractTask> task, OperatorID op);
             Cost(TaskProxy task, OperatorID op);
 
@@ -56,13 +54,8 @@ namespace symbolic {
 
         private:
             explicit Cost(CostMagicFlags);
-
-            static std::string get_group_name(int group_no);
-            static std::unordered_map<std::string, int> group_name_to_group_id;
-            GroupID get_group_id(const TaskProxy task, OperatorID op_id);
-
             CostMagicFlags magic;
-            std::unordered_map<GroupID, int> value;
+            std::unordered_map<grouping::GroupID, int> value;
             int sum;
     };
 }
