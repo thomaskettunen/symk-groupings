@@ -54,7 +54,6 @@ namespace grouping {
                     }
                 }
                 return (pos != 0) ? op_name.substr(0, pos) : op_name;
-                
             };
             
             auto op_name = task.get_operators()[op.get_index()].get_name();
