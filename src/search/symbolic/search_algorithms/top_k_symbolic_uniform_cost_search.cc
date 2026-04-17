@@ -5,6 +5,8 @@
 #include "../searches/bidirectional_search.h"
 #include "../searches/top_k_uniform_cost_search.h"
 
+#include "../grouping.h"
+
 #include <memory>
 
 using namespace std;
@@ -58,6 +60,7 @@ public:
         document_synopsis("");
         symbolic::SymbolicSearch::add_options_to_feature(*this);
         this->add_option<int>("k", "number of plans");
+        this->add_option<std::shared_ptr<grouping::GroupingFunction>>("grouping", "grouping function");
     }
 
     virtual shared_ptr<TopkSymbolicUniformCostSearch> create_component(const plugins::Options &options) const override {
@@ -74,6 +77,7 @@ public:
         document_synopsis("");
         symbolic::SymbolicSearch::add_options_to_feature(*this);
         this->add_option<int>("k", "number of plans");
+        this->add_option<std::shared_ptr<grouping::GroupingFunction>>("grouping", "grouping function");
     }
 
     virtual shared_ptr<TopkSymbolicUniformCostSearch> create_component(const plugins::Options &options) const override {
@@ -91,6 +95,7 @@ public:
         symbolic::SymbolicSearch::add_options_to_feature(*this);
         this->add_option<int>("k", "number of plans");
         this->add_option<bool>("alternating", "alternating", "false");
+        this->add_option<std::shared_ptr<grouping::GroupingFunction>>("grouping", "grouping function");
     }
 
     virtual shared_ptr<TopkSymbolicUniformCostSearch> create_component(

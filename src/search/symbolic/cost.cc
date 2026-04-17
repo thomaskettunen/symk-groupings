@@ -1,4 +1,5 @@
 #include "cost.h"
+#include "grouping.h"
 #include "../plan_manager.h"
 #include "../task_proxy.h"
 #include "../utils/hash.h"
@@ -21,7 +22,6 @@ template<typename K, typename V> V map_get_or(std::unordered_map<K, V> map, K ke
 }
 
 namespace symbolic {
-
 // NOTE: P10: Hvorfor kan jeg ikke definere den her function i headeren?!?!
 std::string magic_to_string(CostMagicFlags flag) {
     switch (flag)
@@ -33,19 +33,18 @@ std::string magic_to_string(CostMagicFlags flag) {
     }
 };
 
-Cost::Cost(CostMagicFlags flag) : magic(flag), sum(-1) {
-}
-Cost::Cost(std::unordered_map<GroupID, int> map) : magic(CostMagicFlags::NORMAL), value(map) {
+Cost::Cost(CostMagicFlags flag) : magic(flag), sum(-1) { }
+Cost::Cost(std::unordered_map<grouping::GroupID, int> map) : magic(CostMagicFlags::NORMAL), value(map) {
     this->sum = 0;
     for(const auto& [key, value] : map){
         this->sum += value;
     }
 }
-Cost::Cost(std::shared_ptr<AbstractTask> task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{get_group_id(TaskProxy(*task), op), 1}}), sum(1) {}
-Cost::Cost(TaskProxy task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{get_group_id(task, op), 1}}), sum(1) {}
+Cost::Cost(std::shared_ptr<AbstractTask> task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{(*grouping::g_grouping_function())(op), 1}}), sum(1) {}
+Cost::Cost(TaskProxy task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{(*grouping::g_grouping_function())(op), 1}}), sum(1) {}
 
 const Cost Cost::INVALID = Cost(CostMagicFlags::INVALID);
-const Cost Cost::MIN = Cost(std::unordered_map<GroupID, int>());
+const Cost Cost::MIN = Cost(std::unordered_map<grouping::GroupID, int>());
 const Cost Cost::MAX = Cost(CostMagicFlags::MAX);
 
 Cost &Cost::operator+=(const Cost &other) {
@@ -103,7 +102,7 @@ bool Cost::operator>=(const Cost &other) const {
     if(this->sum > other.sum) return true;
 
     // NOTE: P10: Assumes the keys are ordereable
-    std::set<GroupID> keys;
+    std::set<grouping::GroupID> keys;
     for(auto &[key, _] : this->value) {
         keys.insert(key);
     }
@@ -143,7 +142,7 @@ bool Cost::operator<=(const Cost &other) const {
     if(this->sum > other.sum) return false;
 
     // NOTE: P10: Assumes the keys are ordereable
-    std::set<GroupID> keys;
+    std::set<grouping::GroupID> keys;
     for(auto &[key, _] : this->value) {
         keys.insert(key);
     }
@@ -183,7 +182,7 @@ bool Cost::operator>(const Cost &other) const {
     if(this->sum > other.sum) return true;
 
     // NOTE: P10: Assumes the keys are ordereable
-    std::set<GroupID> keys;
+    std::set<grouping::GroupID> keys;
     for(auto &[key, _] : this->value) {
         keys.insert(key);
     }
@@ -223,7 +222,7 @@ bool Cost::operator<(const Cost &other) const {
     if(this->sum > other.sum) return false;
 
     // NOTE: P10: Assumes the keys are ordereable
-    std::set<GroupID> keys;
+    std::set<grouping::GroupID> keys;
     for(auto &[key, _] : this->value) {
         keys.insert(key);
     }
@@ -268,7 +267,7 @@ bool Cost::dominates(const Cost &other) const {
     }
 
     // NOTE: P10: Assumes the keys are ordereable
-    std::set<GroupID> keys;
+    std::set<grouping::GroupID> keys;
     for(auto &[key, _] : this->value) {
         keys.insert(key);
     }
@@ -313,19 +312,18 @@ std::string to_string(const Cost c) {
 
     std::string outputString = "";
 
-    std::set<GroupID> ids;
-    for(auto &[name, id] : Cost::group_name_to_group_id) {
+    std::set<grouping::GroupID> ids;
+    for(auto &id : (grouping::g_grouping_function())->get_groups()) {
         ids.insert(id);
     }
 
 #define SHORT_PRINT
-
     for (auto &group : ids) {
         int amount = map_get_or(c.value, group, 0);
 #ifdef SHORT_PRINT
         outputString += std::to_string(amount) + " ";
 #else
-        outputString += "{(" + std::to_string(group) + ") " + Cost::get_group_name(group) + ": " + std::to_string(amount) + "}, ";
+        outputString += "{(" + std::to_string(group) + ") " + (grouping::g_grouping_function())->get_group_name(group) + ": " + std::to_string(amount) + "}, ";
 #endif // SHORT_PRINT
     }
     return "Cost[" + std::to_string(c.sum) + "]( " + outputString + ")";
@@ -334,56 +332,4 @@ std::string to_string(const Cost c) {
 std::ostream &operator<<(std::ostream &os, const Cost &c) {
     return os << to_string(c);
 }
-
-std::unordered_map<std::string, int> Cost::group_name_to_group_id; // NOTE: P10: may cause secret spooky error check here if ghosts appear
-
-
-std::string Cost::get_group_name(int group_no) {
-    for (auto &it : Cost::group_name_to_group_id) {
-        if (it.second == group_no) return it.first;
-    }
-    return std::string("No matching group");
-}
-
-GroupID Cost::get_group_id(const TaskProxy task, OperatorID op_id) {
-    std::function<std::string(std::string, int, std::vector<std::string>)> op_name_to_group_name = [](std::string op_name, int prefixSize, std::vector<std::string> words) {
-        if (words.size() == 0) {
-            size_t pos = 0;
-            for (int i = 0; i < prefixSize; i++) {
-                pos = op_name.find(' ', pos + (i > 0));
-                if (pos == std::string::npos) {
-                    return op_name; //if they are too short whatever we just give back the whole string
-                }
-            }
-            if (pos != 0) {
-                return op_name.substr(0, pos);
-            } else {
-                return op_name;
-            }
-        } else {
-            for (std::string word : words) {
-                if (op_name.find(word) != std::string::npos) {
-                    return word;
-                }
-            }
-            return op_name; // if not in any group you get no cool name
-        }
-    };
-    int prefixSize = 1; // temporary prefix value frankly i do not know where i should put it
-    std::vector<std::string> words; //if we want to filter on specific words
-
-    // todo grouping on specific words
-
-    auto op_name = task.get_operators()[op_id.get_index()].get_name(); //P10 unsure if this is actually the name we will get
-    auto group_name = op_name_to_group_name(op_name, prefixSize, words);
-    GroupID group_id;
-    auto it = Cost::group_name_to_group_id.find(group_name);
-    if (it != Cost::group_name_to_group_id.end()) {
-        group_id = (group_name_to_group_id)[group_name];
-    } else {
-        group_id = group_name_to_group_id.size();
-        (group_name_to_group_id)[group_name] = group_id;
-    }
-    return group_id;
-};
 }
