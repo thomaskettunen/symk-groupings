@@ -119,6 +119,7 @@ void SearchAlgorithm::search() {
     utils::CountdownTimer timer(max_time);
     while (status == IN_PROGRESS) {
         status = step();
+        utils::g_log << "time spent on step: " << timer.get_elapsed_time() << std::endl;
         if (timer.is_expired()) {
             log << "Time limit reached. Abort search." << endl;
             status = TIMEOUT;

@@ -89,6 +89,7 @@ bool UniformCostSearch::prepareBucket() {
         while (frontier.empty()) {
             if(open_list->empty()) { // NOTE: P10: hacky solution to stop when frontier is empty do not forge
                 engine->search_done = true;
+                utils::g_log << "Completed search space no more plans in the open list" << std::endl;
                 return true;
             }
             open_list->pop(frontier);
@@ -135,6 +136,7 @@ void UniformCostSearch::stepImage(int maxTime, int maxNodes) {
     utils::Timer step_timer;
     bool done = prepareBucket();
     if (done) {
+        utils::g_log << "The search has ended" << std::endl;
         return;
     }
 
@@ -145,6 +147,7 @@ void UniformCostSearch::stepImage(int maxTime, int maxNodes) {
     }
 
     if (engine->solved()) {
+        utils::g_log << "The search has ended" << std::endl;
         return; // Skip image if we are done
     }
 
@@ -152,7 +155,6 @@ void UniformCostSearch::stepImage(int maxTime, int maxNodes) {
     ResultExpansion res_expansion = frontier.expand(maxTime, maxNodes, fw);
 
     if (res_expansion.ok) {
-        utils::g_log << "expanded frontier [" << (fw ? "->" : "<-") << "]: " << frontier.g() << std::endl;
         lastStepCost = false; // Must be set to false before calling checkCut
         // Process Simg, removing duplicates and computing h. Store in Sfilter
         // and reopen. Include new states in the open list
@@ -172,6 +174,7 @@ void UniformCostSearch::stepImage(int maxTime, int maxNodes) {
                 }
             }
         }
+        utils::g_log << "expanded frontier [" << (fw ? "->" : "<-") << "]: " << frontier.g() << " frontier nodes: " << stepNodes << std::endl;
     }
 
     while (!frontier.bucketReady() && !open_list->empty()) {

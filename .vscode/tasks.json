@@ -13,7 +13,7 @@
       "label": "build-symbolic",
       "type": "shell",
       "command": "./build.py",
-      "args": ["symbolic"],
+      "args": ["symbolic_debug"],
       "group": "build",
       "problemMatcher": [],
     },
@@ -22,7 +22,7 @@
       "type": "shell",
       "command": "./fast-downward.py",
       "args": [
-        "--build", "symbolic",
+        "--build", "symbolic_debug",
         "--translate",
         "--keep-sas-file",
         "${input:domainFile}",

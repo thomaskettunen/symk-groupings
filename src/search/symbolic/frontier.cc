@@ -4,6 +4,8 @@
 #include "cost.h"
 #include "closed_list.h"
 
+#include "../utils/logging.h"
+
 namespace symbolic {
 Frontier::Frontier() : mgr(nullptr), g_value(Cost::MIN) { }
 
@@ -29,6 +31,9 @@ void Frontier::clear(){ // clears only Sfilter
 ///        I.e. if the frontier has cost (1 2 3) and contains state s1, which is found in the closed-list with any cost dominating (1 2 3), e.g. cost (1 1 1), s1 will be removed from the frontier.
 /// @param closed The closed-list to base the filtering on.
 void Frontier::filter(const std::shared_ptr<ClosedList> closed) {
+
+    utils::g_log << "nodes before filtering frontier " << nodes() << std::endl;
+
     if (Sfilter.empty()) { return; }
     assert(Smerge.empty() && Szero.empty() && S.empty());
     for (auto &[cost, bdd] : closed->getClosedList()) {
@@ -38,6 +43,8 @@ void Frontier::filter(const std::shared_ptr<ClosedList> closed) {
             }
         }
     }
+
+    utils::g_log << "nodes after filtering frontier " << nodes() << std::endl;
 }
 
 bool Frontier::nextStepZero() const { return !Szero.empty() || (S.empty() && mgr->has_zero_cost_transition()); }

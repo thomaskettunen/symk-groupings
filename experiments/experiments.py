@@ -5,6 +5,7 @@ Experiment for the FI+groups planner
 """
 
 import os
+import sys
 
 from downward import suites
 from downward.reports.absolute import AbsoluteReport
@@ -17,14 +18,13 @@ def mean(a):
 
 # Create custom report class with suitable info and error attributes.
 class BaseReport(AbsoluteReport):
-    INFO_ATTRIBUTES = ["time_limit", "memory_limit"]
+    INFO_ATTRIBUTES = ["time_limit", "memory_limit", "k"]
     ERROR_ATTRIBUTES = [
         "domain",
         "problem",
         "algorithm",
         "unexplained_errors",
         "error",
-        "node",
     ]
 
 benchmarks = [
@@ -34,6 +34,7 @@ benchmarks = [
     "depot:p07.pddl",
     "depot:p13.pddl",
     "driverlog:p05.pddl",
+    "blocks:probBLOCKS-7-0.pddl"
 ]
 
 BENCHMARKS_DIR = os.environ["DOWNWARD_BENCHMARKS"]
@@ -69,8 +70,8 @@ for task in suites.build_suite(BENCHMARKS_DIR, SUITE):
     # We could also use exp.add_resource().
     run.add_command(
         "run-planner",
-        # [os.environ["PLANNER"], "{domain}", "{problem}", f'{os.environ["K"]}', '--overall-time-limit', f'{TIME_LIMIT}'],
-        [os.environ["PLANNER"], "{domain}", "{problem}", '1000', '--number-of-plans', f'{os.environ["K"]}', '--overall-time-limit', f'{TIME_LIMIT}'], #!!! USE FOR THEIRS LMAO
+        #[sys.executable, os.environ["PLANNER"], "--build", "symbolic", "{domain}", "{problem}", "--search", f"{os.environ["SEARCH"]}(silent=true,k={os.environ["K"]})", '--overall-time-limit', f'{TIME_LIMIT}'],
+        [sys.executable, os.environ["PLANNER"], "--build", "symbolic", "{domain}", "{problem}", "--search", f"{os.environ["SEARCH"]}(silent=true,k={os.environ["K"]},max_time={os.environ["MAX_TIME"]})"],
         time_limit=TIME_LIMIT,
         memory_limit=MEMORY_LIMIT,
     )
@@ -78,7 +79,7 @@ for task in suites.build_suite(BENCHMARKS_DIR, SUITE):
     # 'domain', 'problem', 'algorithm', 'coverage'.
     run.set_property("domain", task.domain)
     run.set_property("problem", task.problem)
-    run.set_property("algorithm", "SYMK-GROUPED")
+    run.set_property("algorithm", f'{os.environ["SEARCH"]}')
     # BaseReport needs the following properties:
     # 'time_limit', 'memory_limit'.
     run.set_property("time_limit", TIME_LIMIT)

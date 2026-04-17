@@ -78,6 +78,7 @@ SearchStatus SymbolicSearch::step() {
 
     // Search finished!
     if (search_done) { 
+        utils::g_log << "The search has ended" << std::endl;
         solution_registry->construct_cheaper_solutions();
         solution_found = plan_data_base->get_num_reported_plan() > 0;
         cur_status = solution_found ? SOLVED : FAILED;
@@ -108,10 +109,11 @@ SearchStatus SymbolicSearch::step() {
 
     if (cur_status == SOLVED) {
         set_plan(plan_data_base->get_first_accepted_plan());
-        cout << endl;
+        cout << "The search has ended" << endl;
         return cur_status;
     }
     if (cur_status == FAILED) {
+        cout << "The search has ended" << endl;
         return cur_status;
     }
 

@@ -5,7 +5,7 @@
       "name": "Debug Downward (symbolic)",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/builds/symbolic/bin/downward",
+      "program": "${workspaceFolder}/builds/symbolic_debug/bin/downward",
       "args": [
         "--search",
         "symk_bd(silent=true,k=${input:numPlans})",

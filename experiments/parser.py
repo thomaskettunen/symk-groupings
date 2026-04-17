@@ -2,61 +2,61 @@ import re
 from lab.parser import Parser
 from enum import Enum
 
-class ExitCode(Enum):
-    FOUND_K = 0
-    FOUND_ALL = 12
-    OUT_OF_MEM = 22
-    OUT_OF_TIME = 23
-    OTHER_ERROR = 9999999
+import os
 
-k = 5
+class ExitCode(Enum):
+    FOUND_K = 1
+    FOUND_ALL = 2
+    OUT_OF_MEM = 4
+    OUT_OF_TIME = 8
+    OTHER_ERROR = 16
+
+"""
+    TODO:
+        things to get done average plan time at the time of non dominated plan found:
+		- should_be_top5 er suspicious
+        - A better way to get average time spent
+        - why is k just set equal to 5 in here xd
+"""
 
 def error(content, props):
     props["error"] = not content == ''
 
 def exit_code(content, props):
-    if not props["error"] and not props["found_k"]:
-        matches = re.findall(r"search exit code: (\d+)", content)
+    props["exit code"] = ExitCode.OTHER_ERROR
 
-        external_planners_started = len(re.findall(r"Running search", content))
-        external_planners_done = len(re.findall(r"search exit code: (\d+)", content))
+    if(re.search(f"Completed search space no more plans in the open list",content) != None):
+        props["exit code"] = ExitCode.FOUND_ALL
 
-        if(external_planners_started > external_planners_done): # If more searches were started than done assume timeout
-            props['exit code'] = ExitCode.OUT_OF_TIME.value
-        elif len(matches) > 0: #. if trannslate sttep aborts, we don't even get one search exit code
-            props["exit code"] = int(matches[-1])
-        else:
-            props["exit code"] = ExitCode.OTHER_ERROR.value #. Fake exit code to indicate this branch
 
 def total_time(content, props):
-    if not props["error"] and not props["found_k"]:
+    if not props["error"]:
         try:
-            props["total time"] = float(re.search(r"All iterations are done \[\d+\.\d+s CPU, (\d+\.\d+)s wall-clock\]", content).group(1))
+            props["total time"] = float(re.search(r"Total time: (\d+\.\d+)s", content).group(1))
         except:
            props["total time"] = 600
 
+
 def coverage(content, props):
-    if not props["error"] and not props["found_k"]:
-        match ExitCode(props["exit code"]):
-            case ExitCode.FOUND_K | ExitCode.FOUND_ALL:
-                props["coverage"] = 1
-            case _:
-                props["coverage"] = 0
+
+    print("the search", re.search(f"The search has ended",content))
+
+    if (re.search(f"The search has ended",content) != None):
+        props["coverage"] = 1
+    else:
+        props["coverage"] = 0
 
 
 def plans_found(content, props):
-    if not props["error"] and not props["found_k"]:
-        matches = re.findall(r"found (\d+) plans", content)
-        if len(matches) > 0:
-            props["plans found"] = int(matches[-1])
-        else:
-            props["plans found"] = 0
+    if not props["error"]:
+        matches = re.findall(r"found non dominated plan", content)
+        props["plans found"] = len(matches)
 
 
 def last_plan_time(content, props):
-    if not props["error"] and not props["found_k"]:
-        #. Last time it says "Iteration step \d+ is done, found \d+ plans" is the last time it finds plans
-        matches = re.findall(r"Iteration step \d+ is done, found \d+ plans, time \[\d+\.\d+s CPU, (\d+\.\d+)s wall-clock\]", content)
+    if not props["error"]:
+        matches = re.findall(r"time spent on step: (\d+\.\d+)", content)
+
         if len(matches) > 0:
             props["last plan time_mean"] = float(matches[-1])
             props["last plan time_min"] = float(matches[-1])
@@ -66,20 +66,24 @@ def last_plan_time(content, props):
             props["last plan time_min"] = None
             props["last plan time_max"] = None
 
+
 def should_be_top5(content, props):
     if not props["error"]:
-        matches = re.findall(f"Iteration step {k} is done, found {k} plans, time \\[\\d+\\.\\d+s CPU, (\\d+\\.\\d+)s wall-clock\\]", content)
-        props["over_k"] = False
-        props["found_k"] = False
-        if len(matches) > 0:
-            props["found_k"] = True
-            if len(re.findall(f"Iteration step {k+1}, time limit", content)) > 0: # SKriver den når den starter den næste
-                props["over_k"] = True
-            time = float(matches[-1])
+        plan_count = re.search("Number of plans: (\d+)", content)
+
+        if plan_count == None :
+            props["over_k"] = False
+            return
+        
+        plan_count = int(plan_count.group(1))
+
+        if plan_count > 0:
+            time = float(re.search("Total time: (\d+\.\d+)", content).group(1))
+
             props["exit code"] = ExitCode.FOUND_K.value
             props["total time"] = time
             props["coverage"] = 1
-            props["plans found"] = k
+            props["plans found"] = plan_count
             props["last plan time_mean"] = time
             props["last plan time_min"] = time
             props["last plan time_max"] = time
@@ -87,7 +91,6 @@ def should_be_top5(content, props):
 def to_str(content, props):
     if not props["error"]:
         props["exit code"] = f'{ExitCode(props["exit code"])}' #. enum name. This will intentionally error on unknown exit codes
-        props["over_k"] = int(props["over_k"])
     props["error"] = str(props["error"])
 
 class FIParser(Parser):

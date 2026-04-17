@@ -3,6 +3,11 @@
 # $1 planner
 # $2 BENCHMARKS
 # $3 number of plans (k)
+# $4 search
+# $5 max time in seconds
+
+# example:
+# ./run_experiments.sh ../fast-downward.py ../../benchmarks 2 symk_bd 60 -- --all
 
 PLANNER=""
 PLANNER_FLAG="--planner"
@@ -16,17 +21,22 @@ K=""
 K_FLAG="--k"
 K_DEFAULT="5"
 
+SEARCH=""
+SEARCH_FLAG="--search"
+SEARCH_DEFAULT="symk_fw"
+
+MAX_TIME=""
+MAX_TIME_FLAG="--search"
+MAX_TIME_DEFAULT="600"
+
 while [ "$#" -ge 1 ] && [ "$1" != "--" ]; do
-    echo
-    echo "$#"
-    echo "$1"
     if [ "$#" -ge 1 ] && [ "$1" == "--*" ]; then #. key-value args
         if [ "$#" -ge 1 ] && [ "$1" == "$PLANNER_FLAG" ]; then
             shift;
             if [ "$#" -ge 1 ] && [ "$1" != "--" ]; then
                 PLANNER="$1"; shift;
             else
-                echo "--planner expects a path"
+                echo "$PLANNER_FLAG expects a path"
             fi
         fi
 
@@ -48,6 +58,7 @@ while [ "$#" -ge 1 ] && [ "$1" != "--" ]; do
                 echo "--k expects a num"
             fi
         fi
+
     else #. positional args
         if [ "$PLANNER" == "" ] && [ "$#" -ge 1 ] && [ "$1" != "--" ]; then
             PLANNER="$1"; shift;
