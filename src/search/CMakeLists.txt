@@ -1004,6 +1004,7 @@ create_fast_downward_library(
     SOURCES
         symbolic/pareto_front
         symbolic/cost
+        symbolic/grouping
         symbolic/closed_list
         symbolic/frontier
         symbolic/open_list

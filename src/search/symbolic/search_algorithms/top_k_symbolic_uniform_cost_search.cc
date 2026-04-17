@@ -70,7 +70,7 @@ public:
         document_synopsis("");
         symbolic::SymbolicSearch::add_options_to_feature(*this);
         this->add_option<int>("k", "number of plans");
-        this->add_option<std::shared_ptr<grouping::GroupingFunction>>("grouping", "grouping", "none");
+        this->add_option<std::shared_ptr<grouping::GroupingFunction>>("grouping", "grouping function");
     }
 
     virtual shared_ptr<TopkSymbolicUniformCostSearch> create_component(const plugins::Options &options) const override {
@@ -87,7 +87,7 @@ public:
         document_synopsis("");
         symbolic::SymbolicSearch::add_options_to_feature(*this);
         this->add_option<int>("k", "number of plans");
-        this->add_option<std::shared_ptr<grouping::GroupingFunction>>("grouping", "grouping", "none");
+        this->add_option<std::shared_ptr<grouping::GroupingFunction>>("grouping", "grouping function");
     }
 
     virtual shared_ptr<TopkSymbolicUniformCostSearch> create_component(const plugins::Options &options) const override {
@@ -105,7 +105,7 @@ public:
         symbolic::SymbolicSearch::add_options_to_feature(*this);
         this->add_option<int>("k", "number of plans");
         this->add_option<bool>("alternating", "alternating", "false");
-        this->add_option<std::shared_ptr<grouping::GroupingFunction>>("grouping", "grouping", "none");
+        this->add_option<std::shared_ptr<grouping::GroupingFunction>>("grouping", "grouping function");
     }
 
     virtual shared_ptr<TopkSymbolicUniformCostSearch> create_component(
