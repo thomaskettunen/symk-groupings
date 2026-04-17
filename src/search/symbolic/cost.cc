@@ -22,7 +22,6 @@ template<typename K, typename V> V map_get_or(std::unordered_map<K, V> map, K ke
 }
 
 namespace symbolic {
-
 // NOTE: P10: Hvorfor kan jeg ikke definere den her function i headeren?!?!
 std::string magic_to_string(CostMagicFlags flag) {
     switch (flag)
@@ -34,16 +33,15 @@ std::string magic_to_string(CostMagicFlags flag) {
     }
 };
 
-Cost::Cost(CostMagicFlags flag) : magic(flag), sum(-1) {
-}
+Cost::Cost(CostMagicFlags flag) : magic(flag), sum(-1) { }
 Cost::Cost(std::unordered_map<grouping::GroupID, int> map) : magic(CostMagicFlags::NORMAL), value(map) {
     this->sum = 0;
     for(const auto& [key, value] : map){
         this->sum += value;
     }
 }
-Cost::Cost(std::shared_ptr<AbstractTask> task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{0, 1}}), sum(1) {} // TODO: P10: Temporarely lie, for now
-Cost::Cost(TaskProxy task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{0, 1}}), sum(1) {} // TODO: P10: Temporarely lie, for now
+Cost::Cost(std::shared_ptr<AbstractTask> task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{(*grouping::g_grouping_function())(op), 1}}), sum(1) {}
+Cost::Cost(TaskProxy task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{(*grouping::g_grouping_function())(op), 1}}), sum(1) {}
 
 const Cost Cost::INVALID = Cost(CostMagicFlags::INVALID);
 const Cost Cost::MIN = Cost(std::unordered_map<grouping::GroupID, int>());
@@ -315,8 +313,7 @@ std::string to_string(const Cost c) {
     std::string outputString = "";
 
     std::set<grouping::GroupID> ids;
-    // for(auto &[name, id] : Cost::group_name_to_group_id) {
-    for(grouping::GroupID id = 0; id < 1; ++id) { // TODO: P10: Temporarely lie, for now
+    for(auto &id : (grouping::g_grouping_function())->get_groups()) {
         ids.insert(id);
     }
 

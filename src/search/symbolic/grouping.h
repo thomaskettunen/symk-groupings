@@ -20,6 +20,8 @@ namespace grouping {
         virtual ~GroupingFunction() = default;
     };
 
+    std::shared_ptr<GroupingFunction> g_grouping_function();
+
     class Id : public GroupingFunction {
     public:
         Id(TaskProxy task) : GroupingFunction(task) {}
