@@ -36,6 +36,23 @@ namespace grouping {
     };
     static plugins::FeaturePlugin<IdGroupingFeature> _id_plugin;
 
+    class ConstGroupingFeature: public plugins::TypedFeature<GroupingFunction, Const> {
+    public:
+        ConstGroupingFeature(): TypedFeature("constant") {
+            symbolic::SymbolicSearch::add_options_to_feature(*this); //. We only care about the "transform" option
+            document_title("Constant grouping function");
+            document_synopsis("for use in top-k symbolic searches, performs no grouping");
+        }
+
+        virtual std::shared_ptr<Const> create_component(const plugins::Options &options) const override {
+            auto grouping_func = std::make_shared<Const>(TaskProxy(*options.get<std::shared_ptr<AbstractTask>>("transform")));
+            utils::g_log << "Grouping function: " << grouping_func->to_string() << std::endl;
+            set_grouping_function(grouping_func);
+            return grouping_func;
+        }
+    };
+    static plugins::FeaturePlugin<ConstGroupingFeature> _const_plugin;
+
     class PrefixGroupingFeature: public plugins::TypedFeature<GroupingFunction, Prefix> {
         public:
         PrefixGroupingFeature(): TypedFeature("prefix") {
