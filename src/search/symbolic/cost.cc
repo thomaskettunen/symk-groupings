@@ -80,7 +80,7 @@ bool Cost::operator>=(const Cost &other) const {
     switch (this->magic)
     {
         case CostMagicFlags::MAX: return true;
-        case CostMagicFlags::INVALID: return false; //. Invalid values were originally represented with -1, ussure if they should be equal
+        case CostMagicFlags::INVALID: return other.magic == CostMagicFlags::INVALID; //. Invalid values were originally represented with -1, we have decided all invalids are equal for hashing reasons
         case CostMagicFlags::NORMAL: break;
         default: throw std::runtime_error("P10: Unsure how to handle >= for cost with lhs->magic:" + magic_to_string(this->magic));
     }
@@ -88,7 +88,7 @@ bool Cost::operator>=(const Cost &other) const {
     switch (other.magic)
     {
         case CostMagicFlags::MAX: return (this->magic == CostMagicFlags::MAX);
-        case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
+        case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1
         case CostMagicFlags::NORMAL: break;
         default: throw std::runtime_error("P10: Unsure how to handle >= for cost with rhs->magic:" + magic_to_string(other.magic));
     }
@@ -120,7 +120,7 @@ bool Cost::operator<=(const Cost &other) const {
     switch (this->magic)
     {
         case CostMagicFlags::MAX: return true;
-        case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
+        case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1
         case CostMagicFlags::NORMAL: break;
         default: throw std::runtime_error("P10: Unsure how to handle <= for cost with lhs->magic:" + magic_to_string(this->magic));
     }
@@ -128,7 +128,7 @@ bool Cost::operator<=(const Cost &other) const {
     switch (other.magic)
     {
         case CostMagicFlags::MAX: return true;
-        case CostMagicFlags::INVALID: return false; //. Invalid values were originally represented with -1, an so should be "less" than every valid value I think
+        case CostMagicFlags::INVALID: return this->magic == CostMagicFlags::INVALID; //. Invalid values were originally represented with -1, same as the reasons given for operator>=
         case CostMagicFlags::NORMAL: break;
         default: throw std::runtime_error("P10: Unsure how to handle <= for cost with rhs->magic:" + magic_to_string(other.magic));
     }
