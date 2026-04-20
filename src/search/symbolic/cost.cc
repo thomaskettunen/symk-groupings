@@ -34,17 +34,12 @@ std::string magic_to_string(CostMagicFlags flag) {
 };
 
 Cost::Cost(CostMagicFlags flag) : magic(flag), sum(-1) { }
-Cost::Cost(std::unordered_map<grouping::GroupID, int> map) : magic(CostMagicFlags::NORMAL), value(map) {
-    this->sum = 0;
-    for(const auto& [key, value] : map){
-        this->sum += value;
-    }
-}
-Cost::Cost(std::shared_ptr<AbstractTask> task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{(*grouping::g_grouping_function())(op), 1}}), sum(1) {}
-Cost::Cost(TaskProxy task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{(*grouping::g_grouping_function())(op), 1}}), sum(1) {}
+Cost::Cost(std::unordered_map<grouping::GroupID, int> map, int sum) : magic(CostMagicFlags::NORMAL), value(map), sum(sum) { }
+Cost::Cost(std::shared_ptr<AbstractTask> task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{(*grouping::g_grouping_function())(op), 1}}), sum(task->get_operator_cost(op.get_index(), false)) {}
+Cost::Cost(TaskProxy task, OperatorID op) : magic(CostMagicFlags::NORMAL), value({{(*grouping::g_grouping_function())(op), 1}}), sum(task.get_operators()[op].get_cost()) {}
 
 const Cost Cost::INVALID = Cost(CostMagicFlags::INVALID);
-const Cost Cost::MIN = Cost(std::unordered_map<grouping::GroupID, int>());
+const Cost Cost::MIN = Cost(std::unordered_map<grouping::GroupID, int>(), 0);
 const Cost Cost::MAX = Cost(CostMagicFlags::MAX);
 
 Cost &Cost::operator+=(const Cost &other) {

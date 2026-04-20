@@ -25,7 +25,6 @@ namespace symbolic {
     class Cost {
         public:
             explicit Cost() = delete;
-            explicit Cost(std::unordered_map<grouping::GroupID, int> map);
             Cost(std::shared_ptr<AbstractTask> task, OperatorID op);
             Cost(TaskProxy task, OperatorID op);
 
@@ -53,6 +52,7 @@ namespace symbolic {
             friend std::ostream &operator<<(std::ostream &os, const Cost &c);
 
         private:
+            explicit Cost(std::unordered_map<grouping::GroupID, int> map, int sum);
             explicit Cost(CostMagicFlags);
             CostMagicFlags magic;
             std::unordered_map<grouping::GroupID, int> value;
