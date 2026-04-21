@@ -97,13 +97,13 @@ ENV = LocalEnvironment(processes=9)
 SUITE = benchmarks
 ATTRIBUTES = [
     "error",
-    # Attribute("exit code"),                                         # TODO: parse this
-    # Attribute("total time", min_wins=True),                         # TODO: parse this
-    # Attribute("coverage", min_wins=False, scale="linear"),          # TODO: parse this
-    # Attribute("plans found", min_wins=False),                       # TODO: parse this
-    # Attribute("last plan time_mean", min_wins=True, function=mean), # TODO: parse this
-    # Attribute("last plan time_min", min_wins=True, function=min),   # TODO: parse this
-    # Attribute("last plan time_max", min_wins=True, function=max),   # TODO: parse this
+    Attribute("exit code"),
+    Attribute("total time", min_wins=True),
+    Attribute("coverage", min_wins=False, scale="linear"),
+    Attribute("plans found", min_wins=False),
+    Attribute("last plan time_mean", min_wins=True, function=mean),
+    Attribute("last plan time_min", min_wins=True, function=min),
+    Attribute("last plan time_max", min_wins=True, function=max),
 ]
 TIME_LIMIT = 3600
 MEMORY_LIMIT = 2048
