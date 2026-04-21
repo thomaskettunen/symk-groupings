@@ -61,6 +61,10 @@ public:
     SymbolicSearch(const plugins::Options &opts);
     virtual ~SymbolicSearch() = default;
 
+    bool is_silent(){
+        return silent;
+    }
+
     virtual void setMinG(Cost g) {
         min_g = Cost::max(g, min_g);
     }

@@ -172,7 +172,7 @@ void UniformCostSearch::stepImage(int maxTime, int maxNodes) {
                 }
             }
         }
-        utils::g_log << "expanded frontier [" << (fw ? "->" : "<-") << "]: " << frontier.g() << " frontier nodes: " << stepNodes << std::endl;
+        if(!engine->is_silent()) utils::g_log << "expanded frontier [" << (fw ? "->" : "<-") << "]: " << frontier.g() << " frontier nodes: " << stepNodes << std::endl;
     }
 
     while (!frontier.bucketReady() && !open_list->empty()) {

@@ -32,7 +32,7 @@ void Frontier::clear(){ // clears only Sfilter
 /// @param closed The closed-list to base the filtering on.
 void Frontier::filter(const std::shared_ptr<ClosedList> closed) {
 
-    utils::g_log << "nodes before filtering frontier " << nodes() << std::endl;
+    //utils::g_log << "nodes before filtering frontier " << nodes() << std::endl;
 
     if (Sfilter.empty()) { return; }
     assert(Smerge.empty() && Szero.empty() && S.empty());
@@ -44,7 +44,7 @@ void Frontier::filter(const std::shared_ptr<ClosedList> closed) {
         }
     }
 
-    utils::g_log << "nodes after filtering frontier " << nodes() << std::endl;
+    //utils::g_log << "nodes after filtering frontier " << nodes() << std::endl;
 }
 
 bool Frontier::nextStepZero() const { return !Szero.empty() || (S.empty() && mgr->has_zero_cost_transition()); }
