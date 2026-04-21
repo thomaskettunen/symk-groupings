@@ -8,12 +8,12 @@
 using namespace std;
 
 namespace symbolic {
-TopKSelector::TopKSelector(int k)
+TopKSelector::TopKSelector(int k, bool dump_plans, bool write_plans)
     : sym_vars(nullptr),
       state_registry(nullptr),
       anytime_completness(false),
-      dump_plans(true),
-      write_plans(true),
+      dump_plans(dump_plans),
+      write_plans(write_plans),
       num_desired_plans(k),
       num_accepted_plans(0),
       num_rejected_plans(0),

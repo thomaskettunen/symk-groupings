@@ -16,7 +16,7 @@ class StateRegistry;
 namespace symbolic {
 class TopKSelector {
 public:
-    TopKSelector(int k);
+    TopKSelector(int k, bool dump_plans, bool write_plans);
     ~TopKSelector() { }
     void init(std::shared_ptr<SymVariables> sym_vars, const std::shared_ptr<AbstractTask> &task, PlanManager &plan_manager);
     void add_plan(const Plan &plan);

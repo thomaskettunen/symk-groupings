@@ -59,7 +59,6 @@ public:
         document_title("Topk Symbolic Forward Uniform Cost Search");
         document_synopsis("");
         symbolic::SymbolicSearch::add_options_to_feature(*this);
-        this->add_option<int>("k", "number of plans");
         this->add_option<std::shared_ptr<grouping::GroupingFunction>>("grouping", "grouping function");
     }
 
@@ -76,7 +75,6 @@ public:
         document_title("Topk Symbolic Backward Uniform Cost Search");
         document_synopsis("");
         symbolic::SymbolicSearch::add_options_to_feature(*this);
-        this->add_option<int>("k", "number of plans");
         this->add_option<std::shared_ptr<grouping::GroupingFunction>>("grouping", "grouping function");
     }
 
@@ -93,7 +91,6 @@ public:
         document_title("Topk Symbolic Bidirectional Uniform Cost Search");
         document_synopsis("");
         symbolic::SymbolicSearch::add_options_to_feature(*this);
-        this->add_option<int>("k", "number of plans");
         this->add_option<bool>("alternating", "alternating", "false");
         this->add_option<std::shared_ptr<grouping::GroupingFunction>>("grouping", "grouping function");
     }

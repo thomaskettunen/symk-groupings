@@ -26,7 +26,7 @@ SymbolicSearch::SymbolicSearch(const plugins::Options &opts)
       lower_bound(Cost::MIN), // NOTE: P10: The lower bound is the cost that is used to check if we have hit a cut
       upper_bound(Cost::MAX), // TODO: P10: Here we also ignore bound and just set it to max, make sure it doesn't fuck us
       min_g(Cost::MIN),
-      plan_data_base(make_shared<TopKSelector>(opts.get<int>("k"))),
+      plan_data_base(make_shared<TopKSelector>(opts.get<int>("k"), opts.get<bool>("dump_plans"), opts.get<bool>("write_plans"))),
       solution_registry(make_shared<SymSolutionRegistry>()),
       silent(opts.get<bool>("silent")) {
     cout << endl;
@@ -97,7 +97,6 @@ SearchStatus SymbolicSearch::step() {
     }
 
     if (!silent) {
-
         utils::g_log << " [" << solution_registry->get_num_found_plans() << "/" << plan_data_base->get_num_desired_plans() << " plans]" << flush;
         if (step_num > 0) {
             utils::g_log << ", dir: " << search->get_last_dir() << flush;
@@ -143,6 +142,9 @@ void SymbolicSearch::print_statistics() const {
 }
 
 void SymbolicSearch::add_options_to_feature(plugins::Feature &feature) {
+    feature.add_option<int>("k", "number of plans");
+    feature.add_option<bool>("dump_plans", "print plans in console", "false");
+    feature.add_option<bool>("write_plans", "print plans to files", "true");
     feature.add_option<shared_ptr<AbstractTask>>(
         "transform",
         "Optional task transformation for the search."
