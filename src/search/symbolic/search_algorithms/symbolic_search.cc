@@ -127,13 +127,6 @@ void SymbolicSearch::new_solution(const SymSolutionCut &sol) {
     }
 }
 
-void SymbolicSearch::save_plan_if_necessary() {
-    if (found_solution()) {
-        utils::g_log << "Best plan:" << endl;
-        plan_manager.dump_plan(get_plan(), task_proxy);
-    }
-}
-
 void SymbolicSearch::print_statistics() const {
     utils::g_log << "Number of plans: "
                  << solution_registry->get_num_found_plans() << endl;
@@ -143,8 +136,8 @@ void SymbolicSearch::print_statistics() const {
 
 void SymbolicSearch::add_options_to_feature(plugins::Feature &feature) {
     feature.add_option<int>("k", "number of plans");
-    feature.add_option<bool>("dump_plans", "print plans in console", "false");
-    feature.add_option<bool>("write_plans", "print plans to files", "true");
+    feature.add_option<bool>("dump_plans", "write plans to log", "false");
+    feature.add_option<bool>("write_plans", "write plan to file", "true");
     feature.add_option<shared_ptr<AbstractTask>>(
         "transform",
         "Optional task transformation for the search."

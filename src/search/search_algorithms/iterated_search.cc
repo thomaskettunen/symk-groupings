@@ -126,11 +126,6 @@ void IteratedSearch::print_statistics() const {
     statistics.print_detailed_statistics();
 }
 
-void IteratedSearch::save_plan_if_necessary() {
-    // We don't need to save here, as we automatically save after
-    // each successful search iteration.
-}
-
 class IteratedSearchFeature
     : public plugins::TypedFeature<SearchAlgorithm, IteratedSearch> {
 public:

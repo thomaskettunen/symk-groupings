@@ -52,7 +52,6 @@ int main(int argc, const char **argv) {
         search_timer.stop();
         utils::g_timer.stop();
 
-        search_algorithm->save_plan_if_necessary();
         search_algorithm->print_statistics();
         utils::g_log << "Search time: " << search_timer << endl;
         utils::g_log << "Total time: " << utils::g_timer << endl;

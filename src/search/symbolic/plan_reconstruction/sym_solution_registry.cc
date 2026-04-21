@@ -45,10 +45,7 @@ void SymSolutionRegistry::reconstruct_plans ( const vector<SymSolutionCut> &sym_
 
     if (!queue.empty()) {
         symbolic::Cost cost = queue.top().get_f();
-
         if (pareto_front::dominates(cost)) { utils::g_log << "dominated " << cost << std::endl; } 
-        else { utils::g_log << "found non dominated plan: " << cost << std::endl; }
-
         pareto_front::insert(cost); // NOTE: P10: we get the total price for the current plan we want
         // NOTE: P10: the queue for some reason finds all possible reorderings, where the hell does it do this
     }

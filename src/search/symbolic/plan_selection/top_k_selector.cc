@@ -136,17 +136,11 @@ void TopKSelector::save_accepted_plan(const Plan &plan) {
     states_accepted_goal_paths += states_on_path(plan);
     num_accepted_plans++;
 
-    if (dump_plans) {
-        utils::g_log << endl
-                     << "New plan " << num_accepted_plans << ":" << endl;
-        if (!write_plans) {
-            plan_mgr.dump_plan(plan, plan_mgr_task_proxy);
-        }
-    }
-
+    utils::g_log << "Found plan [" << num_accepted_plans << "/" << num_desired_plans << "] with cost: " << Cost::plan_cost(plan, plan_mgr_task_proxy) << endl;
     if (write_plans) {
-        plan_mgr.save_plan(
-            plan, plan_mgr_task_proxy, dump_plans, num_desired_plans > 1);
+        plan_mgr.save_plan(plan, plan_mgr_task_proxy, dump_plans, num_desired_plans > 1);
+    } else if (dump_plans) {
+        plan_mgr.dump_plan(plan, plan_mgr_task_proxy);
     }
 }
 

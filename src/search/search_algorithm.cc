@@ -140,13 +140,6 @@ bool SearchAlgorithm::check_goal_and_set_plan(const State &state) {
     return false;
 }
 
-void SearchAlgorithm::save_plan_if_necessary() {
-    if (found_solution()) {
-        utils::g_log << "Best plan:" << endl;
-        plan_manager.save_plan(get_plan(), task_proxy);
-    }
-}
-
 int SearchAlgorithm::get_adjusted_cost(const OperatorProxy &op) const {
     return get_adjusted_action_cost(op, cost_type, is_unit_cost);
 }

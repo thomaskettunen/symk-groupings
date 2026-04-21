@@ -34,7 +34,6 @@ public:
                        &opts); // TODO this still needs the options objects, the
                                // prototype for issue559 resolves this
 
-    virtual void save_plan_if_necessary() override;
     virtual void print_statistics() const override;
 };
 }
