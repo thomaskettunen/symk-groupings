@@ -12,6 +12,7 @@ from downward.reports.absolute import AbsoluteReport
 from lab.environments import LocalEnvironment
 from lab.experiment import Experiment
 from lab.reports import Attribute, geometric_mean
+from deis_mcc import DEISSlurmEnvironment
 
 def mean(a):
     return sum(a) / len(a)
@@ -92,8 +93,10 @@ benchmarks = [
     # "zenotravel",
 ]
 
-BENCHMARKS_DIR = os.environ["DOWNWARD_BENCHMARKS"]
-ENV = LocalEnvironment(processes=9)
+if DEISSlurmEnvironment.is_cluster():
+    ENV = DEISSlurmEnvironment(partition='dhabi')
+else:
+    ENV = LocalEnvironment(processes=9)
 SUITE = benchmarks
 ATTRIBUTES = [
     "error",
@@ -114,14 +117,14 @@ exp = Experiment(environment=ENV)
 from parser import FIParser
 exp.add_parser(FIParser())
 
-for task in suites.build_suite(BENCHMARKS_DIR, SUITE):
+for task in suites.build_suite(os.environ['DOWNWARD_BENCHMARKS'], SUITE):
     for search, grouping in [(search, grouping) for search in ["symk_fw", "symk_bd"] for grouping in ["prefix(1)"]]:
         run = exp.add_run()
         run.add_resource("domain", task.domain_file, symlink=True)
         run.add_resource("problem", task.problem_file, symlink=True)
         run.add_command(
             "run-planner",
-            [sys.executable, os.environ["PLANNER"], "--build", "symbolic", "{domain}", "{problem}", "--search", f"{search}(silent=true,k={os.environ["K"]},grouping={grouping},max_time={TIME_LIMIT})"],
+            [sys.executable, os.environ['PLANNER'], "--build", "symbolic", "{domain}", "{problem}", "--search", f"{search}(silent=true,k={os.environ['K']},grouping={grouping},max_time={TIME_LIMIT})"],
             time_limit=TIME_LIMIT,
             memory_limit=MEMORY_LIMIT,
         )
@@ -135,11 +138,11 @@ for task in suites.build_suite(BENCHMARKS_DIR, SUITE):
         # 'time_limit', 'memory_limit'.
         run.set_property("time_limit", TIME_LIMIT)
         run.set_property("memory_limit", MEMORY_LIMIT)
-        run.set_property("k", f'{os.environ["K"]}')
+        run.set_property("k", f"{os.environ['K']}")
         # Every run has to have a unique id in the form of a list.
         # The algorithm name is only really needed when there are
         # multiple algorithms.
-        run.set_property("id", [f'{search}', f'{grouping}', f'{os.environ["K"]}', f"{TIME_LIMIT}", f"{MEMORY_LIMIT}", task.domain, task.problem])
+        run.set_property("id", [f"{search}", f"{grouping}", f"{os.environ['K']}", f"{TIME_LIMIT}", f"{MEMORY_LIMIT}", task.domain, task.problem])
 
 # Add step that writes experiment files to disk.
 exp.add_step("build", exp.build)
