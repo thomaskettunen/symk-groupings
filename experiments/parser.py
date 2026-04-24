@@ -84,6 +84,10 @@ def to_str(content, props):
     if error: return
     props["exit code"] = f'{ExitCode(props["exit code"])}' #. enum name. This will intentionally error on unknown exit codes
 
+def revision(content, props):
+    if(props["error"]): return
+    props["revision"] = re.findall("Search code revision: (\w*(?:\-dirty)?)" , content)[0];
+
 class FIParser(Parser):
     def __init__(self):
         super().__init__()
@@ -95,4 +99,5 @@ class FIParser(Parser):
         self.add_function(total_time)
         self.add_function(plans_found)
         self.add_function(last_plan_time)
+        self.add_function(revision)
         self.add_function(to_str) #. keep last, stringyfies thigs that shoulnd't be summed
