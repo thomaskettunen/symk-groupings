@@ -24,6 +24,7 @@ class BaseReport(AbsoluteReport):
         "domain",
         "problem",
         "algorithm",
+        "grouping",
         "unexplained_errors",
         "error",
     ]
@@ -100,13 +101,13 @@ else:
 SUITE = benchmarks
 ATTRIBUTES = [
     "error",
-    Attribute("exit code"),
-    Attribute("total time", min_wins=True),
+    Attribute("exit_code"),
+    Attribute("total_time", min_wins=True),
     Attribute("coverage", min_wins=False, scale="linear"),
-    Attribute("plans found", min_wins=False),
-    Attribute("last plan time_mean", min_wins=True, function=mean),
-    Attribute("last plan time_min", min_wins=True, function=min),
-    Attribute("last plan time_max", min_wins=True, function=max),
+    Attribute("plans_found", min_wins=False),
+    Attribute("last_plan_time_mean", min_wins=True, function=mean),
+    Attribute("last_plan_time_min", min_wins=True, function=min),
+    Attribute("last_plan_time_max", min_wins=True, function=max),
 ]
 TIME_LIMIT = 3600
 MEMORY_LIMIT = 2048
