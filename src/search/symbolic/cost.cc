@@ -119,7 +119,7 @@ bool Cost::operator>=(const Cost &other) const {
 bool Cost::operator<=(const Cost &other) const {
     switch (this->magic)
     {
-        case CostMagicFlags::MAX: return true;
+        case CostMagicFlags::MAX: return (other.magic == CostMagicFlags::MAX);
         case CostMagicFlags::INVALID: return true; //. Invalid values were originally represented with -1
         case CostMagicFlags::NORMAL: break;
         default: throw std::runtime_error("P10: Unsure how to handle <= for cost with lhs->magic:" + magic_to_string(this->magic));
