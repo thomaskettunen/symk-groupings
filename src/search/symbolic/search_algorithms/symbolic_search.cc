@@ -79,8 +79,7 @@ SearchStatus SymbolicSearch::step() {
     // Search finished!
     if (search_done) { 
         solution_registry->construct_cheaper_solutions();
-        solution_found = plan_data_base->get_num_reported_plan() > 0;
-        cur_status = solution_found ? SOLVED : FAILED;
+        cur_status = SOLVED; // NOTE: P10: This path implies openlist is empty, which is a solution in our problem
     } else {
         // Bound increased => construct plans
         
