@@ -1,11 +1,10 @@
 import json
 import os
-import argparse
+import sys
 import re
 
 def main():
   experiments = ["forbiditer-prefix(1)", "forbiditer-prefix(2)", "symk_bd-prefix(1)", "symk_bd-prefix(2)", "symk_fw-prefix(1)", "symk_fw-prefix(2)"]
-
   results = {}
   for experiment in experiments:
     evaluations = open("./data/experiments-eval/properties", 'r')
@@ -44,6 +43,7 @@ def main():
           results[experiment]["out_of_memory"] += 1
 
   construct_coverage_time_found_table(results)
+  construct_error_code_table(results)
 
 def construct_coverage_time_found_table(json_object):
   table = f"\\begin{{tabular}}{{|c|{"|".join(["c" for _ in json_object])}|}}\n\\hline\n"
@@ -70,8 +70,50 @@ def construct_coverage_time_found_table(json_object):
   output_file.write(table)
   output_file.close()
 
-def construct_error_code_table(object):
-  pass
+def construct_error_code_table(json_object):
+  table = f"\\begin{{tabular}}{{|c|{"|".join(["c" for _ in json_object])}|}}\n\\hline\n"
+
+  table += f"&{"&".join(json_object.keys()).replace("_","\_")} \\\\\n"
+
+  table += "\\hline\\hline\n"
+
+  table += f"FOUND\_ALL & {"&".join([str(json_object[key]["found_all"]) for key in json_object])} \\\\\n"
+
+  table += "\\hline\n"
+
+  table += f"FOUND\_K & {"&".join([str(json_object[key]["found_k"]) for key in json_object])} \\\\\n"
+
+  table += "\\hline\n"
+
+  table += f"OTHER\_ERROR & {"&".join([str(json_object[key]["other_error"]) for key in json_object])} \\\\\n"
+
+  table += "\\hline\n"
+
+  table += f"OUT\_OF\_MEM & {"&".join([str(json_object[key]["out_of_memory"]) for key in json_object])} \\\\\n"
+
+  table += "\\hline\n"
+
+  table += f"OUT\_OF\_TIME & {"&".join([str(json_object[key]["out_of_time"]) for key in json_object])} \\\\\n"
+
+  table += "\\hline\n"
+
+  table += f"OUT\_OF\_SPACE & {"&".join([str(json_object[key]["out_of_space"]) for key in json_object])} \\\\\n"
+
+  table += "\\hline\n"
+
+  table += f"OUT\_OF\_PREPROCESS\_ERR & {"&".join([str(json_object[key]["preprocess_error"]) for key in json_object])} \\\\\n"
+
+  table += "\\hline\n"
+
+  table += f"TRANSLATE\_OUT\_OF\_MEM & {"&".join([str(json_object[key]["out_of_memory"]) for key in json_object])} \\\\\n"
+
+  table += "\\hline\n"
+
+  table += "\\end{tabular}"
+
+  output_file = open("./latex/summation_of_exit_codes_table.txt", 'w')
+  output_file.write(table)
+  output_file.close()
 
 if __name__ := "__main__":
   main()
