@@ -12,9 +12,9 @@ def main():
     evaluations.close()
 
     results[experiment] = json.loads('{"coverage":0, "error-False":0, "error-True":0, "last_plan_time_max":0, "last_plan_time_mean":0, "last_plan_time_min":0,"plans_found":0,"total_time":0,"found_all":0,"found_k":0,"other_error":0,"out_of_memory":0,"out_of_space":0,"out_of_time":0,"preprocess_error":0,"translate_out_of_memory":0}')
-    
+
     runs = re.findall(f"{experiment.replace("(", "\(").replace(")", "\)")}"+".*?(\{.*?\})", evaluations_as_plain_text, re.DOTALL)
-    
+  
     for run in runs:
       run = json.loads(run)
       results[experiment]["coverage"] += 0 if run["coverage"] is None else run["coverage"]
@@ -45,25 +45,81 @@ def main():
   construct_coverage_time_found_table(results)
   construct_error_code_table(results)
 
+  evaluations = json.loads(open("./data/experiments-eval/properties", 'r').read())
+
+  for experiment in experiments:
+    flatten_experiments(evaluations, experiment)
+
+def flatten_experiments(evaluations, algorithm):
+
+  rows = []
+  for key in evaluations:
+    if(evaluations[key]["algorithm"] == algorithm):
+      rows.append(evaluations[key])
+
+  columns = [
+    ("problem", lambda row: f"{row["domain"]} {row["problem"]}"),
+    ("exit code", lambda row: row["exit_code"].replace("ExitCode.", "")),
+    ("error", lambda row: row["error"]),
+    ("total time", lambda row: row["total_time"]),
+    ("plans found", lambda row: row["plans_found"]),
+    ("last plan", lambda row: row["last_plan_time_max"])
+  ]
+
+  table = """
+    <style>
+      *{
+        margin: 0px;
+        padding: 0px;
+        box-sizing: border-box;
+        font-family: sans-serif;
+      }
+      table{
+        text-align:center;
+        border-spacing:0px;
+      }
+      td{
+        border:solid black 2px;
+        padding: 10px;
+        padding-top: 2px;
+        padding-bottom: 2px;
+      }
+    </style>
+  """
+
+  table += "<table>"
+  table += "<tr>"
+  for column, _ in columns:
+    table += f"<td>{column}</td>"
+  table += "</tr>"
+
+  colors = ["FFFFBB", "FFFFFF"]
+  i = 0
+  for row in rows:
+    table += f"<tr style=\"background-color:{colors[i]}\">"
+    for _, column in columns:
+      table += f"<td>{column(row)}</td>"
+    table += "</tr>"
+
+    i = (i + 1) % 2
+
+  table += "</table>"
+
+  output_file = open(f"./latex/flattened_{algorithm}.html", 'w')
+  output_file.write(table)
+  output_file.close()
+
+
 def construct_coverage_time_found_table(json_object):
   table = f"\\begin{{tabular}}{{|c|{"|".join(["c" for _ in json_object])}|}}\n\\hline\n"
-
   table += f"&{"&".join(json_object.keys()).replace("_","\_")} \\\\\n"
-
   table += "\\hline\\hline\n"
-
   table += f"coverage & {"&".join([str(json_object[key]["coverage"]) for key in json_object])} \\\\\n"
-
   table += "\\hline\n"
-
   table += f"total time & {"&".join([str(int(json_object[key]["total_time"])) for key in json_object])} \\\\\n"
-
   table += "\\hline\n"
-
   table += f"plans found & {"&".join([str(json_object[key]["plans_found"]) for key in json_object])} \\\\\n"
-
   table += "\\hline\n"
-
   table += "\\end{tabular}"
 
   output_file = open("./latex/summation_table.txt", 'w')
@@ -74,41 +130,23 @@ def construct_error_code_table(json_object):
   table = f"\\begin{{tabular}}{{|c|{"|".join(["c" for _ in json_object])}|}}\n\\hline\n"
 
   table += f"&{"&".join(json_object.keys()).replace("_","\_")} \\\\\n"
-
   table += "\\hline\\hline\n"
-
   table += f"FOUND\_ALL & {"&".join([str(json_object[key]["found_all"]) for key in json_object])} \\\\\n"
-
   table += "\\hline\n"
-
   table += f"FOUND\_K & {"&".join([str(json_object[key]["found_k"]) for key in json_object])} \\\\\n"
-
   table += "\\hline\n"
-
   table += f"OTHER\_ERROR & {"&".join([str(json_object[key]["other_error"]) for key in json_object])} \\\\\n"
-
   table += "\\hline\n"
-
   table += f"OUT\_OF\_MEM & {"&".join([str(json_object[key]["out_of_memory"]) for key in json_object])} \\\\\n"
-
   table += "\\hline\n"
-
   table += f"OUT\_OF\_TIME & {"&".join([str(json_object[key]["out_of_time"]) for key in json_object])} \\\\\n"
-
   table += "\\hline\n"
-
   table += f"OUT\_OF\_SPACE & {"&".join([str(json_object[key]["out_of_space"]) for key in json_object])} \\\\\n"
-
   table += "\\hline\n"
-
   table += f"OUT\_OF\_PREPROCESS\_ERR & {"&".join([str(json_object[key]["preprocess_error"]) for key in json_object])} \\\\\n"
-
   table += "\\hline\n"
-
   table += f"TRANSLATE\_OUT\_OF\_MEM & {"&".join([str(json_object[key]["out_of_memory"]) for key in json_object])} \\\\\n"
-
   table += "\\hline\n"
-
   table += "\\end{tabular}"
 
   output_file = open("./latex/summation_of_exit_codes_table.txt", 'w')
