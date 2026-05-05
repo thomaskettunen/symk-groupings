@@ -162,8 +162,6 @@ void UniformCostSearch::stepImage(int maxTime, int maxNodes) {
                 
                 mgr->merge_bucket(bucket);
 
-                checkFrontierCut(bucket, cost);
-
                 for (auto &bdd : bucket) {
                     if (!bdd.IsZero()) {
                         stepNodes = max(stepNodes, bdd.nodeCount());
