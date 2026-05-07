@@ -158,12 +158,14 @@ exp.add_step("parse", exp.parse)
 # writes them to *-eval/properties.
 exp.add_fetcher(name="fetch")
 
+forbidden_plans = [line.replace("\n","") for line in open("./domains_with_zero_cost.txt", "r")]
+
 # Make a report.
 exp.add_report(
     BaseReport(
         attributes=ATTRIBUTES,
         filter = lambda data:
-            data['domain'] not in ["agricola-opt18-strips", "data-network-opt18-strips", "woodworking-opt08-strips", "woodworking-opt11-strips"]
+            data['domain'] not in forbidden_plans
             and not (data['domain'] == 'organic-synthesis-split-opt18-strips' and data['problem'] == 'p08.pddl')
     ),
     outfile="report.html"
