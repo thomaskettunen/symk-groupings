@@ -3,3 +3,4 @@ __pycache__/
 data/
 run*.zip
 *.tar.bz2
+plots/
