@@ -102,12 +102,20 @@ def parse(get_content, props):
     match search:
         case "symk_fw" | "symk_bw" | "symk_bd":
             if len(found_plan_match := re.findall(r"\[t=(\d+\.\d+)s, \d+ KB\] Found plan \[(\d+)/\d\]", run_log)) > 0:
+                for i, match in enumerate(found_plan_match):
+                    i = i+1
+                    if i != int(match[1]): raise RuntimeError(f"{i} != {int(match[1])}")
+                    props[f"plan_{i}_time"] = float(match[0])
                 props["last_plan_time_mean"] = float(found_plan_match[-1][0])
                 props["last_plan_time_min"] = float(found_plan_match[-1][0])
                 props["last_plan_time_max"] = float(found_plan_match[-1][0])
                 props["plans_found"] = int(found_plan_match[-1][1])
         case "forbiditer":
             if len(found_plan_match := re.findall(r"Iteration step \d+ is done, found (\d+) plans, time \[(\d+\.\d+)s CPU, \d+\.\d+s wall-clock\]", run_log)) > 0:
+                for i, match in enumerate(found_plan_match):
+                    i = i+1
+                    if i != int(match[0]): raise RuntimeError(f"{i} != {int(match[0])}")
+                    props[f"plan_{i}_time"] = float(match[1])
                 props["last_plan_time_mean"] = float(found_plan_match[-1][1])
                 props["last_plan_time_min"] = float(found_plan_match[-1][1])
                 props["last_plan_time_max"] = float(found_plan_match[-1][1])
