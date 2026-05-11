@@ -44,7 +44,9 @@ def main():
 
   with open("./data/experiments-eval/properties", 'r') as f:
     properties = json.loads(f.read())
-  runs = [X((key, properties[key])) for key in properties]
+  with open("./domains_with_zero_cost.txt", "r") as forbidden_domain_file:
+   forbiden_domains = [line.replace("\n","") for line in forbidden_domain_file]
+  runs = [X((key, properties[key])) for key in properties if properties[key]["domain"] not in forbiden_domains]
 
   ## plans_found / time
   brightness = 1.3
