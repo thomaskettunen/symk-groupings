@@ -133,8 +133,9 @@ for task in suites.build_suite(os.environ['DOWNWARD_BENCHMARKS'], SUITE):
         # 'domain', 'problem', 'algorithm', 'coverage'.
         run.set_property("domain", task.domain)
         run.set_property("problem", task.problem)
-        run.set_property("algorithm", f'{search}')
+        run.set_property("search", f'{search}')
         run.set_property("grouping", f'{grouping}')
+        run.set_property("algorithm", f'{search}-{grouping}')
         # BaseReport needs the following properties:
         # 'time_limit', 'memory_limit'.
         run.set_property("time_limit", TIME_LIMIT)
