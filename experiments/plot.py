@@ -9,6 +9,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from pathlib import Path
 import matplotlib.colors as mcolors
+import math
 
 colors = plt.cm.tab10.colors
 
@@ -44,9 +45,7 @@ def main():
 
   with open("./data/experiments-eval/properties", 'r') as f:
     properties = json.loads(f.read())
-  with open("./domains_with_zero_cost.txt", "r") as forbidden_domain_file:
-   forbiden_domains = [line.replace("\n","") for line in forbidden_domain_file]
-  runs = [X((key, properties[key])) for key in properties if properties[key]["domain"] not in forbiden_domains]
+  runs = [X((key, properties[key])) for key in properties]
 
   ## plans_found / time
   brightness = 1.3
@@ -147,7 +146,7 @@ def main():
     problems = [(run["domain"], run["problem"]) for run in runs if run.has({"grouping": grouping})] # Extract problems first to ensure same order
     times = {search: [] for search in searches}
     max_time = max([run["total_time"] for run in runs if run.has({"grouping": grouping})])
-    limit = ((int(max_time * 1.10) + step - 1) // step) * step #. round to step, so it is exactly at the line in the plot
+    limit = 10 ** math.ceil(math.log10(max_time)) # since log scale
     for (domain, problem) in problems:
       for search in searches:
         key = {"domain": domain, "problem": problem, "grouping": grouping, "search": search}
@@ -155,11 +154,15 @@ def main():
         if not len(time) == 1: raise RuntimeError(f"Expected exactly one run with {key}, found: {len(time)}")
         times[search] += time
     plt.scatter(times[selected[0]], times[selected[1]])
+    plt.xscale("log")
+    plt.yscale("log")
 
     plt.xlabel(f"Time {selected[0]}")
     plt.ylabel(f"Time {selected[1]}")
-    ticks = list(range(0, limit + step, step))
-    labels = list(map(str, ticks))[:-1] + ["∞"]
+
+    ticks = [1] + [10**e for e in range(1, int(math.log10(limit)))] + [limit]
+    labels = [rf"$10^0$"] + [rf"$10^{{{e}}}$" for e in range(1, int(math.log10(limit)))] + [rf"$\infty$"]
+
     plt.xticks(ticks, labels)
     plt.yticks(ticks, labels)
     plt.title(f"Total Time {selected[0]} vs {selected[1]} ({grouping})")
