@@ -48,7 +48,7 @@ def parse(get_content, props):
     if (search := props.get("search")) not in ["forbiditer", "symk_fw", "symk_bw", "symk_bd"]: raise RuntimeError(f"Cannot parse unknown search: {search}")
 
     print(props)
-    print(f'data/{search if search == "forbiditer" else "symk"}.{props['grouping']}.runs/{props['run_dir']}')
+    print(f'data/{search if search == "forbiditer" else "symk"}.{props["grouping"]}.runs/{props["run_dir"]}')
 
     ## Exit code
     if (exit_code_match := re.search(r"run-planner exit code: (-?\d+)", driver_log)):
