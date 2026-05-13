@@ -124,6 +124,10 @@ void SymTransitionRelations::create_single_trs(
             }
         }
     }
+    utils::g_log << std::endl << "#Groups: " << ((grouping::g_grouping_function())->get_groups()).size() << std::endl;
+    for (auto &group : (grouping::g_grouping_function())->get_groups()) {
+        utils::g_log << "\t Group " << group << ": " << (grouping::g_grouping_function())->get_group_name(group) << std::endl;
+    }
 }
 
 void SymTransitionRelations::create_merged_transitions() {
