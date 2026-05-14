@@ -37,10 +37,10 @@ class X:
 
   def has(self, dict):
     for key in dict:
-      try:
-        if self.value[key] != dict[key]: return False
-      except KeyError as e:
-        return False
+      if key in self.value.keys() and self.value[key] == dict[key]: continue
+      elif callable(dict[key]) and dict[key](self.value[key]): continue
+      elif ("__iter__" in dir(dict[key])) and self.value[key] in dict[key]: continue
+      else: return False
     return True
 
 def main():
@@ -53,7 +53,8 @@ def main():
     properties = json.loads(f.read())
   runs = [X((key, properties[key])) for key in properties]
 
-  ## Add #Groups to forbiditer data from symk data
+  ## add #Groups to forbiditer data from symk data
+  print(" - add #Groups to forbiditer data from symk data")
   for forbiditer_run in [run for run in runs if run.has({"search": "forbiditer"})]:
     groups = [run["#Groups"] for run in runs if (
       run.has({
@@ -70,6 +71,7 @@ def main():
     else: raise RuntimeError(f"Expected exactly group count for problem {forbiditer_run["domain"]}:{forbiditer_run["problem"]} ({forbiditer_run["grouping"]}), found: {num_groups}")
 
   ## plans_found / time
+  print(" - plans_found / time")
   brightness = 1.3
   for grouping in groupings:
     color_i = 0;
@@ -96,6 +98,7 @@ def main():
   plt.close()
 
   ## progressive k
+  print(" - progressive k")
   ks = list(range(1, int(runs[0]["k"]))) #. Assumes all data has same k (or at least that the first one has max k)
   for grouping in groupings:
     for search in searches:
@@ -122,6 +125,7 @@ def main():
     plt.close()
 
   ## exhausted search / time
+  print(" - exhausted search / time")
   brightness = 1.3
   for grouping in groupings:
     color_i = 0;
@@ -143,12 +147,12 @@ def main():
   plt.close()
 
   ## exhausted search vs last plan
+  print(" - exhausted search vs last plan")
   for grouping in groupings:
     color_i = 0;
     for search in searches:
       color = colors[color_i % len(colors)]
-      last_plans = sorted([run["last_plan_time_max"] or 0 for run in runs if run.has({"search": search, "grouping": grouping, "exit_code": "ExitCode.FOUND_ALL"})])
-      search_done = sorted([run["total_time"] or 0 for run in runs if run.has({"search": search, "grouping": grouping, "exit_code": "ExitCode.FOUND_ALL"})])
+      last_plans, search_done = map(sorted, zip(*[(run["last_plan_time_max"] or 0, run["total_time"] or 0) for run in runs if run.has({"search": search, "grouping": grouping, "exit_code": "ExitCode.FOUND_ALL"})]))
       counts = range(1, len(last_plans)+1)
       plt.plot(counts, last_plans, label = f"{search}-Found last plan", color = multiply(color, 1.3))
       plt.plot(counts, search_done, label = f"{search}-Proved it", color = multiply(color, 0.7))
@@ -165,6 +169,7 @@ def main():
     plt.close()
 
   ## total time scatter
+  print(" - total time scatter")
   #! Assumes just two searches
   selected = (searches[0], searches[1])
   step = 1000 #. grid steps
@@ -196,6 +201,36 @@ def main():
 
     plt.savefig(f"{ensure_dir(f'{plot_dir}/total_time_vs')}/{grouping}.png", dpi=300, bbox_inches="tight")
     plt.close()
+
+  ## coverage / #Groups
+  print(" - coverage / #Groups")
+  n_bars = len(searches)
+  width = 0.8 / n_bars
+  i = 0
+  for i, search  in enumerate(searches):
+    groups = {}
+    for g in [int(run["#Groups"]) for run in runs if run.has({"search": search, "coverage": 1})]:
+      groups[g] = groups.get(g, 0) + 1
+
+    x = sorted(groups)
+    y = [groups[key] for key in x]
+    plt.bar(
+      [xi - ((i - (n_bars - 1) / 2) * width) for xi in x],
+      y,
+      width = width,
+      label = f"{search}", 
+    )
+
+  plt.xlabel("#Groups")
+  plt.ylabel("Coverage")
+  plt.title(f"Coverage over #Groups")
+  plt.grid(True)
+  plt.legend()
+
+  plt.savefig(f"{ensure_dir(f'{plot_dir}')}/coverage_over_num_groups.png", dpi=300, bbox_inches="tight")
+  plt.close()
+
+  print("Done")
 
 if __name__ := "__main__":
   main()
