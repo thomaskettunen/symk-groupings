@@ -48,7 +48,6 @@ def parse(get_content, props):
     if (search := props.get("search")) not in ["forbiditer", "symk_fw", "symk_bw", "symk_bd"]: raise RuntimeError(f"Cannot parse unknown search: {search}")
 
     print(props)
-    print(f'data/{search if search == "forbiditer" else "symk"}.{props["grouping"]}.runs/{props["run_dir"]}')
 
     ## Exit code
     if (exit_code_match := re.search(r"run-planner exit code: (-?\d+)", driver_log)):
@@ -70,20 +69,19 @@ def parse(get_content, props):
             props["exit_code"] = ExitCode.PREPROCESS_ERR.value
         elif search == "forbiditer" and ((not (preprocess_exit_code_match := re.search(r"transform_task exit code: (-?\d+)", run_log))) or int(preprocess_exit_code_match.group(1)) != 0):
             props["exit_code"] = ExitCode.PREPROCESS_ERR.value
-        elif((not (search_exit_code_match := re.search(r"search exit code: (-?\d+)", run_log)))):
-            props["exit_code"] = ExitCode.OTHER_ERROR.value
         elif search.startswith("symk"):
-            props["exit_code"] = int(search_exit_code_match.group(1))
-            if(props["exit_code"] == 0):
-                if(re.search(f"Completed search, open list empty", run_log)):
-                    props["exit_code"] = ExitCode.FOUND_ALL.value
-                else:
-                    props["exit_code"] = ExitCode.FOUND_K.value
+            if((not (search_exit_code_match := re.search(r"search exit code: (-?\d+)", run_log)))):
+                props["exit_code"] = ExitCode.OTHER_ERROR.value
+            else:
+                props["exit_code"] = int(search_exit_code_match.group(1))
+                if(props["exit_code"] == 0):
+                    if(re.search(f"Completed search, open list empty", run_log)):
+                        props["exit_code"] = ExitCode.FOUND_ALL.value
+                    else:
+                        props["exit_code"] = ExitCode.FOUND_K.value
         elif search == "forbiditer":
             search_exit_code_matches = re.findall(r"search exit code: (\d+)", run_log)
-            external_planners_started = len(re.findall(r"Running search", run_log))
-            external_planners_done = len(re.findall(r"search exit code: (\d+)", run_log))
-            if(external_planners_started > external_planners_done): # If more searches were started than done assume timeout
+            if(len(re.findall(r"Running search", run_log)) > len(search_exit_code_matches)): # If more searches were started than done assume timeout
                 props['exit_code'] = ExitCode.OUT_OF_TIME.value
             elif len(search_exit_code_matches) > 0: #. if trannslate sttep aborts, we don't even get one search exit code
                 props["exit_code"] = int(search_exit_code_matches[-1])
@@ -128,6 +126,13 @@ def parse(get_content, props):
             props["coverage"] = 1
         case _:
             props["coverage"] = 0
+
+    match search:
+        case "symk_fw" | "symk_bw" | "symk_bd":
+            if (revision_match := re.search("#Groups: (\d+)" , run_log)): props["#Groups"] = revision_match.group(1)
+            else: props["#Groups"] = 0
+            # else: raise RuntimeError(f"No #Groups")
+
 
     ## Revision
     # if props["coverage"]:
