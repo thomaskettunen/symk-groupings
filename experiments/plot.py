@@ -27,7 +27,13 @@ class X:
     self.value = data[1]
 
   def __getitem__(self, key):
-    return self.value[key]
+    return self.value.get(key, None)
+
+  def __setitem__(self, key, value):
+    self.value[key] = value
+
+  def __str__(self):
+    return f"{self.key}: {self.value}"
 
   def has(self, dict):
     for key in dict:
@@ -46,6 +52,22 @@ def main():
   with open("./data/experiments-eval/properties", 'r') as f:
     properties = json.loads(f.read())
   runs = [X((key, properties[key])) for key in properties]
+
+  ## Add #Groups to forbiditer data from symk data
+  for forbiditer_run in [run for run in runs if run.has({"search": "forbiditer"})]:
+    groups = [run["#Groups"] for run in runs if (
+      run.has({
+        "domain": forbiditer_run["domain"], 
+        "problem": forbiditer_run["problem"], 
+        "grouping": forbiditer_run["grouping"],
+      }) 
+      and run["search"].startswith("symk") 
+      and run["#Groups"] is not None
+    )]
+    num_groups = len(set(groups))
+    if (num_groups == 1): forbiditer_run["#Groups"] = groups[0]
+    elif (num_groups == 0): forbiditer_run["#Groups"] = 133769420
+    else: raise RuntimeError(f"Expected exactly group count for problem {forbiditer_run["domain"]}:{forbiditer_run["problem"]} ({forbiditer_run["grouping"]}), found: {num_groups}")
 
   ## plans_found / time
   brightness = 1.3
@@ -74,19 +96,23 @@ def main():
   plt.close()
 
   ## progressive k
-  ks = list(range(2, 6))
+  ks = list(range(1, int(runs[0]["k"]))) #. Assumes all data has same k (or at least that the first one has max k)
   for grouping in groupings:
     for search in searches:
       coverages = [0 for k in ks]
       for k in ks:
         for data in [run for run in runs if run.has({"search": search, "grouping": grouping})]:
           if data["plans_found"] >= k or data["exit_code"] == "ExitCode.FOUND_ALL":
-            coverages[k-2] += 1
+            coverages[k-1] += 1
 
       plt.plot(ks, coverages, label = search)
 
+    plt.xscale("log")
+    plt.xticks(
+      [10**e for e in range(0, int(math.ceil(math.log10(ks[-1]))) + 1)], 
+      [rf"$10^{{{e}}}$" for e in range(0, int(math.ceil(math.log10(ks[-1]))) + 1)],
+    )
     plt.xlabel("K")
-    plt.xticks(ks)
     plt.ylabel("Coverage")
     plt.title(f"Progressive Coverage ({grouping})")
     plt.grid(True)
