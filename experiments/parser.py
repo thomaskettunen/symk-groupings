@@ -101,7 +101,7 @@ def parse(get_content, props):
     props["last_plan_time_max"] = None
     match search:
         case "symk_fw" | "symk_bw" | "symk_bd":
-            if len(found_plan_match := re.findall(r"\[t=(\d+\.\d+)s, \d+ KB\] Found plan \[(\d+)/\d\]", run_log)) > 0:
+            if len(found_plan_match := re.findall(r"\[t=(\d+\.\d+)s, \d+ KB\] Found plan \[(\d+)/\d+\]", run_log)) > 0:
                 for i, match in enumerate(found_plan_match):
                     i = i+1
                     if i != int(match[1]): raise RuntimeError(f"{i} != {int(match[1])}")
