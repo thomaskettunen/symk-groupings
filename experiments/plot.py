@@ -10,8 +10,31 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import matplotlib.colors as mcolors
 import math
+import importlib.util
 
-colors = plt.cm.tab10.colors
+if importlib.util.find_spec("tqdm") is not None:  
+  from tqdm import tqdm
+  print = tqdm.write
+else:
+  print("install 'tqdm' (pip install tqdm) to show progress bars")
+  class tqdm:
+    def __init__(self, *args, **kwargs):
+      if len(args) > 0:
+        self.iter = args[0]
+
+    def __enter__(self):
+      return self
+
+    def __exit__(self, exc_type, exc, tb):
+      return False
+
+    def __iter__(self):
+      return self.iter.__iter__()
+
+    def update(selg, *args):
+      pass
+
+color_set = plt.cm.tab10.colors
 
 def multiply(color, amount):
     return tuple(max(0, min(1, (x * amount))) for x in mcolors.to_rgb(color))
@@ -46,47 +69,55 @@ class X:
 def main():
   print("Starting")
   plot_dir = ensure_dir("plots")
-  searches = ["forbiditer", "symk_fw"]
-  groupings = ["prefix(1)", "prefix(2)"]
+  run_filter = [
+    # {"domain": "organic-synthesis-split-opt18-strips", "problem": "p08.pddl", "grouping": "prefix(1)"}, #. Errors on all
+    # {"domain": "organic-synthesis-split-opt18-strips", "problem": "p08.pddl", "grouping": "prefix(2)"}, #. Errors on all
+    # {"domain": "organic-synthesis-split-opt18-strips", "problem": "p13.pddl", "grouping": "prefix(1)"}, #. One of the symk runs dies before the other during preprocess
+    # {"domain": "organic-synthesis-split-opt18-strips", "problem": "p16.pddl", "grouping": "prefix(1)"}, #. One of the symk runs dies before the other during preprocess
+    # {"domain": "airport", "problem": "p47-airport5MUC-p8.pddl", "grouping": "prefix(2)"},               #. One of the symk runs dies before the other during preprocess
+  ]
 
   with open("./data/experiments-eval/properties", 'r') as f:
     properties = json.loads(f.read())
-  runs = [X((key, properties[key])) for key in properties]
+  all_runs = [X((key, properties[key])) for key in properties if not any([X((key, properties[key])).has(filtered) for filtered in run_filter])]
+  runs = {}
+  for run in all_runs:
+    runs[(run["search"], run["grouping"])] = runs.get((run["search"], run["grouping"]), []) + [run]
+
+  runs_T = {}
+  for run in all_runs:
+    runs_T[(run["domain"], run["problem"], run["grouping"])] = runs_T.get((run["domain"], run["problem"], run["grouping"]), {})
+    runs_T[(run["domain"], run["problem"], run["grouping"])][run["search"]] = run
+
+  searches, groupings = map(set, zip(*runs.keys()))
+  hues = {s: color_set[i % len(color_set)] for (i, s) in enumerate(set([s for (s, g) in runs]))}
+  values = {g: 1.3 - i*0.6 for (i, g) in enumerate(set([g for (s, g) in runs]))}
+  colors = {(s, g): multiply(hues[s], values[g]) for (s, g) in runs}
 
   ## add #Groups to forbiditer data from symk data
   print(" - add #Groups to forbiditer data from symk data")
-  for forbiditer_run in [run for run in runs if run.has({"search": "forbiditer"})]:
-    groups = [run["#Groups"] for run in runs if (
-      run.has({
-        "domain": forbiditer_run["domain"], 
-        "problem": forbiditer_run["problem"], 
-        "grouping": forbiditer_run["grouping"],
-      }) 
-      and run["search"].startswith("symk") 
-      and run["#Groups"] is not None
-    )]
-    num_groups = len(set(groups))
-    if (num_groups == 1): forbiditer_run["#Groups"] = groups[0]
-    elif (num_groups == 0): forbiditer_run["#Groups"] = 133769420
-    else: raise RuntimeError(f"Expected exactly group count for problem {forbiditer_run["domain"]}:{forbiditer_run["problem"]} ({forbiditer_run["grouping"]}), found: {num_groups}")
+  for (domain, problem, grouping) in tqdm(runs_T):
+    groups_counts = [runs_T[(domain, problem, grouping)][search]["#Groups"] for search in searches if runs_T[(domain, problem, grouping)][search]["#Groups"] is not None]
+    num_groups = 133769420
+    match len(set(groups_counts)):
+      case 1: num_groups = groups_counts[0]
+      case 0: print(f"{domain}:{problem} ({grouping}) has no #Groups"); num_groups = 133769420
+      case 2 if 0 in groups_counts: print(f"{domain}:{problem} ({grouping}) has a zero #Groups"); num_groups = [g for g in groups_counts if g != 0][0] #. Case where one search didn't reach the #Groups print, not necessarily a disagreement
+      case x: raise RuntimeError(f"Expected exactly group count for problem {domain}:{problem} ({grouping}), found: {x}, {groups_counts}")
+    for search in runs_T[(domain, problem, grouping)]:
+      runs_T[(domain, problem, grouping)][search]["#Groups"] = num_groups
 
   ## plans_found / time
   print(" - plans_found / time")
-  brightness = 1.3
-  for grouping in groupings:
-    color_i = 0;
-    for search in searches:
-      color = multiply(colors[color_i % len(colors)], brightness)
+  for (search, grouping) in tqdm(runs):
       times = []
-      for data in [run for run in runs if run.has({"search": search, "grouping": grouping})]:
-        for i in range(1, data["plans_found"]+1):
-          times.append(data[f"plan_{i}_time"])
+      for run in tqdm(runs[(search, grouping)], leave=False):
+        for i in range(1, run["plans_found"]+1):
+          times.append(run[f"plan_{i}_time"])
       times = sorted(times)
       counts = range(1, len(times)+1)
 
-      plt.plot(times, counts, label = f"{search}-{grouping}", color = color)
-      color_i += 1
-    brightness -= 0.6
+      plt.plot(times, counts, label = f"{search}-{grouping}", color = colors[(search, grouping)])
 
   plt.xlabel("Time")
   plt.ylabel("Plans Found")
@@ -99,121 +130,114 @@ def main():
 
   ## progressive k
   print(" - progressive k")
-  ks = list(range(1, int(runs[0]["k"]))) #. Assumes all data has same k (or at least that the first one has max k)
-  for grouping in groupings:
-    for search in searches:
-      coverages = [0 for k in ks]
-      for k in ks:
-        for data in [run for run in runs if run.has({"search": search, "grouping": grouping})]:
-          if data["plans_found"] >= k or data["exit_code"] == "ExitCode.FOUND_ALL":
-            coverages[k-1] += 1
+  ks = list(range(1, int(next(iter(runs.values()))[0]["k"]))) #. Assumes all data has same k (or at least that the first one has max k)
+  with tqdm(total=len(runs)) as pbar:
+    for grouping in groupings:
+      for search in searches:
+        coverages = [0 for k in ks]
+        for k in tqdm(ks, leave=False):
+          for run in runs[(search, grouping)]:
+            if run["plans_found"] >= k or run["exit_code"] == "ExitCode.FOUND_ALL":
+              coverages[k-1] += 1
 
-      plt.plot(ks, coverages, label = search)
+        plt.plot(ks, coverages, label = search)
+        pbar.update(1)
 
-    plt.xscale("log")
-    plt.xticks(
-      [10**e for e in range(0, int(math.ceil(math.log10(ks[-1]))) + 1)], 
-      [rf"$10^{{{e}}}$" for e in range(0, int(math.ceil(math.log10(ks[-1]))) + 1)],
-    )
-    plt.xlabel("K")
-    plt.ylabel("Coverage")
-    plt.title(f"Progressive Coverage ({grouping})")
-    plt.grid(True)
-    plt.legend()
+      plt.xscale("log")
+      plt.xticks(
+        [10**e for e in range(0, int(math.ceil(math.log10(ks[-1]))) + 1)], 
+        [rf"$10^{{{e}}}$" for e in range(0, int(math.ceil(math.log10(ks[-1]))) + 1)],
+      )
+      plt.xlabel("K")
+      plt.ylabel("Coverage")
+      plt.title(f"Progressive Coverage ({grouping})")
+      plt.grid(True)
+      plt.legend()
 
-    plt.savefig(f"{ensure_dir(f'{plot_dir}/progressive_coverage')}/{grouping}.png", dpi=300, bbox_inches="tight")
-    plt.close()
+      plt.savefig(f"{ensure_dir(f'{plot_dir}/progressive_coverage')}/{grouping}.png", dpi=300, bbox_inches="tight")
+      plt.close()
 
   ## exhausted search / time
   print(" - exhausted search / time")
-  brightness = 1.3
-  for grouping in groupings:
-    color_i = 0;
-    for search in searches:
-      color = multiply(colors[color_i % len(colors)], brightness)
-      times = sorted([run["total_time"] or 0 for run in runs if run.has({"search": search, "grouping": grouping, "exit_code": "ExitCode.FOUND_ALL"})])
-      counts = range(1, len(times)+1)
-      plt.plot(times, counts, label = f"{search}-{grouping}", color = color)
-      color_i += 1
-    brightness -= 0.6
+  with tqdm(total=len(runs)) as pbar:
+    for grouping in groupings:
+      for search in searches:
+        times = sorted([run["total_time"] or 0 for run in runs[(search, grouping)] if run.has({"exit_code": "ExitCode.FOUND_ALL"})])
+        counts = range(1, len(times)+1)
+        plt.plot(times, counts, label = f"{search}-{grouping}", color = colors[(search, grouping)])
+        pbar.update(1)
 
-  plt.xlabel("Time")
-  plt.ylabel("Exhausted Search")
-  plt.title(f"Exhausted Search (FOUND_ALL) Over Time")
-  plt.grid(True)
-  plt.legend()
-
-  plt.savefig(f"{ensure_dir(f'{plot_dir}')}/exhausted_search_over_time.png", dpi=300, bbox_inches="tight")
-  plt.close()
-
-  ## exhausted search vs last plan
-  print(" - exhausted search vs last plan")
-  for grouping in groupings:
-    color_i = 0;
-    for search in searches:
-      color = colors[color_i % len(colors)]
-      last_plans, search_done = map(sorted, zip(*[(run["last_plan_time_max"] or 0, run["total_time"] or 0) for run in runs if run.has({"search": search, "grouping": grouping, "exit_code": "ExitCode.FOUND_ALL"})]))
-      counts = range(1, len(last_plans)+1)
-      plt.plot(counts, last_plans, label = f"{search}-Found last plan", color = multiply(color, 1.3))
-      plt.plot(counts, search_done, label = f"{search}-Proved it", color = multiply(color, 0.7))
-      plt.fill_between(counts, last_plans, search_done, alpha=0.3, color = color)
-      color_i += 1
-
-    plt.xlabel("#Problems")
-    plt.ylabel("Time")
-    plt.title(f"Exhausted Search vs Last Plan ({grouping})")
+    plt.xlabel("Time")
+    plt.ylabel("Exhausted Search")
+    plt.title(f"Exhausted Search (FOUND_ALL) Over Time")
     plt.grid(True)
     plt.legend()
 
-    plt.savefig(f"{ensure_dir(f'{plot_dir}/exhausted_search_vs_last_plan')}/{grouping}.png", dpi=300, bbox_inches="tight")
+    plt.savefig(f"{ensure_dir(f'{plot_dir}')}/exhausted_search_over_time.png", dpi=300, bbox_inches="tight")
     plt.close()
+
+  ## exhausted search vs last plan
+  print(" - exhausted search vs last plan")
+  with tqdm(total=len(runs)) as pbar:
+    for grouping in groupings:
+      for search in searches:
+        color = colors[(search, next(iter(groupings)))] #. Since we do darkening/lighting locally here
+        last_plans, search_done = map(sorted, zip(*[(run["last_plan_time_max"] or 0, run["total_time"] or 0) for run in runs[(search, grouping)] if run.has({"exit_code": "ExitCode.FOUND_ALL"})]))
+        counts = range(1, len(last_plans)+1)
+        plt.plot(counts, last_plans, label = f"{search}-Found last plan", color = multiply(color, 1.3))
+        plt.plot(counts, search_done, label = f"{search}-Proved it", color = multiply(color, 0.7))
+        plt.fill_between(counts, last_plans, search_done, alpha=0.3, color = color)
+        pbar.update(1)
+
+      plt.xlabel("#Problems")
+      plt.ylabel("Time")
+      plt.title(f"Exhausted Search vs Last Plan ({grouping})")
+      plt.grid(True)
+      plt.legend()
+
+      plt.savefig(f"{ensure_dir(f'{plot_dir}/exhausted_search_vs_last_plan')}/{grouping}.png", dpi=300, bbox_inches="tight")
+      plt.close()
 
   ## total time scatter
   print(" - total time scatter")
-  #! Assumes just two searches
-  selected = (searches[0], searches[1])
   step = 1000 #. grid steps
-  for grouping in groupings:
-    problems = [(run["domain"], run["problem"]) for run in runs if run.has({"grouping": grouping})] # Extract problems first to ensure same order
-    times = {search: [] for search in searches}
-    max_time = max([run["total_time"] for run in runs if run.has({"grouping": grouping})])
-    limit = 10 ** math.ceil(math.log10(max_time)) # since log scale
-    for (domain, problem) in problems:
-      for search in searches:
-        key = {"domain": domain, "problem": problem, "grouping": grouping, "search": search}
-        time = [run["total_time"] if run["coverage"] else limit for run in runs if run.has(key)]
-        if not len(time) == 1: raise RuntimeError(f"Expected exactly one run with {key}, found: {len(time)}")
-        times[search] += time
-    plt.scatter(times[selected[0]], times[selected[1]])
-    plt.xscale("log")
-    plt.yscale("log")
+  max_time = max([run["total_time"] for run in all_runs])
+  limit = 10 ** math.ceil(math.log10(max_time)) # since log scale
+  for sa, sb in tqdm([(sa, sb) for sa in searches for sb in searches if sa < sb]):
+    for grouping in groupings:
+      points = []
+      for (sa_run, sb_run) in tqdm([(runs_T[(domain, problem, grouping)][sa], runs_T[(domain, problem, grouping)][sb]) for (domain, problem, g) in runs_T if g == grouping], leave=False):
+        points += [(sa_run["total_time"] if sa_run["coverage"] else limit, sb_run["total_time"] if sb_run["coverage"] else limit)]
+      plt.scatter(*zip(*points))
+      plt.xscale("log")
+      plt.yscale("log")
 
-    plt.xlabel(f"Time {selected[0]}")
-    plt.ylabel(f"Time {selected[1]}")
+      plt.xlabel(f"Time {sa}")
+      plt.ylabel(f"Time {sb}")
 
-    ticks = [1] + [10**e for e in range(1, int(math.log10(limit)))] + [limit]
-    labels = [rf"$10^0$"] + [rf"$10^{{{e}}}$" for e in range(1, int(math.log10(limit)))] + [rf"$\infty$"]
+      ticks = [1] + [10**e for e in range(1, int(math.log10(limit)))] + [limit]
+      labels = [rf"$10^0$"] + [rf"$10^{{{e}}}$" for e in range(1, int(math.log10(limit)))] + [rf"$\infty$"]
 
-    plt.xticks(ticks, labels)
-    plt.yticks(ticks, labels)
-    plt.title(f"Total Time {selected[0]} vs {selected[1]} ({grouping})")
-    plt.grid(True)
+      plt.xticks(ticks, labels)
+      plt.yticks(ticks, labels)
+      plt.title(f"Total Time {sa} vs {sb} ({grouping})")
+      plt.grid(True)
 
-    plt.savefig(f"{ensure_dir(f'{plot_dir}/total_time_vs')}/{grouping}.png", dpi=300, bbox_inches="tight")
-    plt.close()
+      plt.savefig(f"{ensure_dir(f'{plot_dir}/total_time_vs/{grouping}')}/{sa}_vs_{sb}.png", dpi=300, bbox_inches="tight")
+      plt.close()
 
   ## coverage / #Groups
   print(" - coverage / #Groups")
   n_bars = len(searches)
   width = 0.8 / n_bars
   i = 0
-  for i, search  in enumerate(searches):
-    groups = {}
-    for g in [int(run["#Groups"]) for run in runs if run.has({"search": search, "coverage": 1})]:
-      groups[g] = groups.get(g, 0) + 1
+  for i, search  in tqdm(enumerate(searches)):
+    group_counts = {}
+    for group_count in tqdm([int(run["#Groups"]) for (s, g) in runs if s == search for run in runs[(s, g)] if run.has({"coverage": 1})], leave=False):
+      group_counts[group_count] = group_counts.get(group_count, 0) + 1
 
-    x = sorted(groups)
-    y = [groups[key] for key in x]
+    x = sorted(group_counts)
+    y = [group_counts[group_count] for group_count in x]
     plt.bar(
       [xi - ((i - (n_bars - 1) / 2) * width) for xi in x],
       y,
