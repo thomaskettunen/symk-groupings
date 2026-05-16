@@ -33,9 +33,21 @@
       "problemMatcher": [],
     },
     {
-      "label": "build-and-clean",
+      "label": "preprocess-symbolic",
+      "type": "shell",
+      "command": "./fast-downward.py",
+      "args": [
+        "--build", "symbolic_debug",
+        "--preprocess", "output.sas"
+      ],
+      "dependsOn": ["translate-symbolic"],
+      "dependsOrder": "sequence",
+      "problemMatcher": [],
+    },
+    {
+      "label": "prepare-debug",
       "group": "build",
-      "dependsOn": ["translate-symbolic", "clean-plans"],
+      "dependsOn": ["preprocess-symbolic", "clean-plans"],
       "dependsOrder": "sequence",
     },
   ],

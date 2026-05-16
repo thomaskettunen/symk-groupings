@@ -17,7 +17,7 @@
       "miDebuggerPath": "/usr/bin/gdb",
       "stopAtEntry": false,
       "externalConsole": false,
-      "preLaunchTask": "build-and-clean",
+      "preLaunchTask": "prepare-debug",
       "setupCommands": [
         {
           "description": "Enable pretty printing",
