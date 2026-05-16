@@ -107,6 +107,16 @@ def main():
     for search in runs_T[(domain, problem, grouping)]:
       runs_T[(domain, problem, grouping)][search]["#Groups"] = num_groups
 
+  ## sanity check
+  print(" - running sanity check")
+  disagreement = False
+  for (domain, problem, grouping) in tqdm(runs_T):
+    plan_counts = [(search, runs_T[(domain, problem, grouping)][search]["plans_found"]) for search in searches if runs_T[(domain, problem, grouping)][search]["coverage"]]
+    if len(set([c for (s, c) in plan_counts])) > 1:
+      disagreement = True
+      print(f"{domain}:{problem} ({grouping}) has a disagreement, {plan_counts}")
+  if disagreement: raise RuntimeError(f"There were disagreements in plan counts. Aborting.")
+
   ## plans_found / time
   print(" - plans_found / time")
   for (search, grouping) in tqdm(runs):
