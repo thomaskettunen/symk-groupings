@@ -44,9 +44,6 @@ protected:
     SymParameters sym_params; // Parameters for symbolic search
 
     int step_num;
-    Cost lower_bound; // Lower bound of search (incl. min-action costs)
-    Cost upper_bound; // Upper bound of search (not use by top_k)
-    Cost min_g; // min g costs of open lists
 
     std::shared_ptr<TopKSelector> plan_data_base;
     std::shared_ptr<SymSolutionRegistry> solution_registry; // Solution registry
@@ -65,20 +62,8 @@ public:
         return silent;
     }
 
-    virtual void setMinG(Cost g) {
-        min_g = Cost::max(g, min_g);
-    }
-
     virtual bool solved() const {
         return search_done;
-    }
-
-    virtual Cost getLowerBound() const {
-        return lower_bound;
-    }
-
-    virtual Cost getMinG() const {
-        return min_g;
     }
 
     virtual BDD get_states_on_goal_paths() const {

@@ -59,8 +59,6 @@ bool UniformCostSearch::init(
 
     prepareBucket();
 
-    engine->setMinG(getG());
-
     return true;
 }
 
@@ -102,7 +100,6 @@ bool UniformCostSearch::prepareBucket() {
                 closed->insert(frontier.g(), states);
             }
         }
-        engine->setMinG(getG());
     }
 
     return false;

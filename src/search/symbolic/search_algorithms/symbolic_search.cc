@@ -23,9 +23,6 @@ SymbolicSearch::SymbolicSearch(const plugins::Options &opts)
       vars(make_shared<SymVariables>(opts, task)),
       sym_params(opts, task),
       step_num(-1),
-      lower_bound(Cost::MIN), // NOTE: P10: The lower bound is the cost that is used to check if we have hit a cut
-      upper_bound(Cost::MAX), // TODO: P10: Here we also ignore bound and just set it to max, make sure it doesn't fuck us
-      min_g(Cost::MIN),
       plan_data_base(make_shared<TopKSelector>(opts.get<int>("k"), opts.get<bool>("dump_plans"), opts.get<bool>("write_plans"))),
       solution_registry(make_shared<SymSolutionRegistry>()),
       silent(opts.get<bool>("silent")) {
@@ -55,10 +52,6 @@ void SymbolicSearch::initialize() {
         num_states *= task->get_variable_domain_size(var);
     }
     Cost max_plan_cost = Cost::MAX; // TODO: P10: Once again we simply lie about the upper bound
-    upper_bound = Cost::MAX; // TODO: P10: See above
-
-    utils::g_log << "Maximal plan cost: " << upper_bound << endl;
-    cout << endl;
 
     plan_data_base->init(vars, search_task, get_plan_manager());
 }
@@ -122,7 +115,6 @@ SearchStatus SymbolicSearch::step() {
 void SymbolicSearch::new_solution(const SymSolutionCut &sol) {
     if (!solution_registry->found_k_plans()) {
         solution_registry->register_solution(sol);
-        upper_bound = min(upper_bound, sol.get_f());
     }
 }
 

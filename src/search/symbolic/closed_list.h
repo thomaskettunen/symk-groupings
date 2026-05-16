@@ -37,8 +37,7 @@ public:
 
     SymSolutionCut getCheapestCut(BDD states, Cost g, bool fw) const;
 
-    std::vector<SymSolutionCut> getAllCuts(
-        BDD states, Cost g, bool fw, Cost lower_bound) const;
+    std::vector<SymSolutionCut> getAllCuts(BDD states, Cost g, bool fw) const;
 
     inline BDD getClosed() const {
         return closedTotal;

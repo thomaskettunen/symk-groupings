@@ -10,7 +10,7 @@ namespace symbolic {
 /// @param g The cost of the bucket
 void TopkUniformCostSearch::checkFrontierCut(Bucket &bucket, Cost g) {
     for (BDD &bucketBDD : bucket) {
-        auto all_sols = perfectHeuristic->getAllCuts(bucketBDD, g, fw, engine->getMinG());
+        auto all_sols = perfectHeuristic->getAllCuts(bucketBDD, g, fw);
         for (auto &sol : all_sols) {
             engine->new_solution(sol);
         }
