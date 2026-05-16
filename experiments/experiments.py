@@ -107,14 +107,21 @@ exp = Experiment(environment=ENV)
 from parser import FIParser
 exp.add_parser(FIParser())
 
+searches = {
+    "symk_fw-B": lambda g, k: f"symk_fw(silent=true,k={k},grouping={g},max_time={TIME_LIMIT})",
+    "symk_bw-B": lambda g, k: f"symk_bw(silent=true,k={k},grouping={g},max_time={TIME_LIMIT})",
+    "symk_bd-B": lambda g, k: f"symk_bd(silent=true,k={k},grouping={g},max_time={TIME_LIMIT})",
+    "symk_bd-B-alternating": lambda g, k: f"symk_bd(alternating=true,silent=true,k={k},grouping={g},max_time={TIME_LIMIT})",
+}
+
 for task in suites.build_suite(os.environ['DOWNWARD_BENCHMARKS'], SUITE):
-    for search, grouping in [(search, grouping) for search in ["symk_fw", "symk_bd"] for grouping in ["prefix(1)"]]:
+    for search, grouping in [(search, grouping) for search in searches for grouping in ["prefix(1)"]]:
         run = exp.add_run()
         run.add_resource("domain", task.domain_file, symlink=True)
         run.add_resource("problem", task.problem_file, symlink=True)
         run.add_command(
             "run-planner",
-            [sys.executable, os.environ['PLANNER'], "--build", "symbolic", "{domain}", "{problem}", "--search", f"{search}(silent=true,k={os.environ['K']},grouping={grouping},max_time={TIME_LIMIT})"],
+            [sys.executable, os.environ['PLANNER'], "--build", "symbolic", "{domain}", "{problem}", "--search", searches[search](grouping, os.environ['K'])],
             time_limit=TIME_LIMIT,
             memory_limit=MEMORY_LIMIT,
         )
