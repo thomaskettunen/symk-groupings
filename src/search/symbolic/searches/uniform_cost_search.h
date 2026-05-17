@@ -34,15 +34,16 @@ class SymController;
 class ClosedList;
 
 class UniformCostSearch : public SymSearch {
+public:
+    // Current state of the search:
+    std::shared_ptr<ClosedList> closed; // Closed list is a shared ptr to share
+    std::shared_ptr<OpenList> open_list;
+    Frontier frontier;
 protected:
     bool fw; // Direction of the search. true=forward, false=backward
 
     Estimation step_estimation;
 
-    // Current state of the search:
-    std::shared_ptr<ClosedList> closed; // Closed list is a shared ptr to share
-    std::shared_ptr<OpenList> open_list;
-    Frontier frontier;
 
     // Opposite direction. Mostly relevant when bidirectional search ist used
     std::shared_ptr<ClosedList> perfectHeuristic;
