@@ -45,7 +45,7 @@ def parse(get_content, props):
     if not (driver_log := get_content("driver.log")): raise RuntimeError(f"No driver.log, run wasn't started")
 
     if not (run_log := get_content("run.log")): raise RuntimeError(f"No run.log???")
-    if (search := props.get("search")) not in ["forbiditer", "symk_fw", "symk_bw", "symk_bd"]: raise RuntimeError(f"Cannot parse unknown search: {search}")
+    if (search := props.get("search")) != "forbiditer" and not search.startswith("symk"): raise RuntimeError(f"Cannot parse unknown search: {search}")
 
     print(props)
 
@@ -98,7 +98,7 @@ def parse(get_content, props):
     props["last_plan_time_min"] = None
     props["last_plan_time_max"] = None
     match search:
-        case "symk_fw" | "symk_bw" | "symk_bd":
+        case x if x.startswith("symk"):
             if len(found_plan_match := re.findall(r"\[t=(\d+\.\d+)s, \d+ KB\] Found plan \[(\d+)/\d+\]", run_log)) > 0:
                 for i, match in enumerate(found_plan_match):
                     i = i+1
@@ -127,11 +127,10 @@ def parse(get_content, props):
         case _:
             props["coverage"] = 0
 
-    match search:
-        case "symk_fw" | "symk_bw" | "symk_bd":
-            if (revision_match := re.search("#Groups: (\d+)" , run_log)): props["#Groups"] = revision_match.group(1)
-            else: props["#Groups"] = 0
-            # else: raise RuntimeError(f"No #Groups")
+    if search.startswith("symk"):
+        if (revision_match := re.search("#Groups: (\d+)" , run_log)): props["#Groups"] = revision_match.group(1)
+        else: props["#Groups"] = 0
+        # else: raise RuntimeError(f"No #Groups")
 
 
     ## Revision
@@ -149,7 +148,7 @@ def parse(get_content, props):
     ## Toal time
     try:
         match search:
-            case "symk_fw" | "symk_bw" | "symk_bd":
+            case x if x.startswith("symk"):
                 props["total_time"] = float(re.search(r"Total time: (\d+\.\d+)s", run_log).group(1))
             case "forbiditer":
                 props["total_time"] = float(re.search(r"All iterations are done \[\d+\.\d+s CPU, (\d+\.\d+)s wall-clock\]", run_log).group(1))
