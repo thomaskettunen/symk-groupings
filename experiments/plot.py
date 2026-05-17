@@ -264,6 +264,31 @@ def main():
   plt.savefig(f"{ensure_dir(f'{plot_dir}')}/coverage_over_num_groups.png", dpi=300, bbox_inches="tight")
   plt.close()
 
+  ## exit code table
+  print(" - exit code table")
+  all_codes = set()
+  exit_codes = {}
+  for (search, grouping) in tqdm(runs):
+    exit_codes[(search, grouping)] = {"total": 0}
+    for exit_code in tqdm([run["exit_code"].removeprefix("ExitCode.") for run in runs[(search, grouping)]], leave=False):
+      all_codes.add(exit_code)
+      exit_codes[(search, grouping)][exit_code] = exit_codes[(search, grouping)].get(exit_code, 0) + 1
+      exit_codes[(search, grouping)]["total"] += 1
+
+  w0 = max(len("total"), *[len(f"{search} {grouping}") for (search, grouping) in exit_codes])
+  w_rest = max([len(exit_code) for exit_code in all_codes])
+
+  print(f"{"":>{w0}}", end=" | ")
+  for exit_code in all_codes:
+    print(f"{exit_code:^{w_rest}}", end=" | ")
+  print(f"{"total":^{w_rest}}", end=" | \n")
+
+  for (search, grouping) in exit_codes:
+    print(f"{f"{search} {grouping}":>{w0}}", end=" | ")
+    for exit_code in all_codes:
+      print(f"{exit_codes[(search, grouping)].get(exit_code, 0):^{w_rest}}", end=" | ")
+    print(f"{exit_codes[(search, grouping)]["total"]:^{w_rest}}", end=" | \n")
+
   print("Done")
 
 if __name__ := "__main__":
