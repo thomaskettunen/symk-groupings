@@ -47,6 +47,7 @@ protected:
 
     // Opposite direction. Mostly relevant when bidirectional search ist used
     std::shared_ptr<ClosedList> perfectHeuristic;
+    std::shared_ptr<OpenList> oppositeOpenList; 
 
     bool lastStepCost; // If the last step was a cost step (to know if we are in
                        // estimationDisjCost or Zero)

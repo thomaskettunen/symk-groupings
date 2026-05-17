@@ -47,6 +47,7 @@ bool UniformCostSearch::init(
 
     if (opposite_search) {
         perfectHeuristic = opposite_search->getClosedShared();
+        oppositeOpenList = opposite_search->open_list;
     } else {
         perfectHeuristic = make_shared<ClosedList>();
         perfectHeuristic->init(mgr.get());
@@ -90,6 +91,20 @@ bool UniformCostSearch::prepareBucket() {
                 return true;
             }
             open_list->pop(frontier);
+            last_g_cost = frontier.g();
+            if (oppositeOpenList) {
+                bool dominated = !oppositeOpenList->open.empty();
+                for (auto &[cost, bucket] : oppositeOpenList->open) {
+                    if (!pareto_front::dominates(last_g_cost + cost)) {
+                        dominated = false;
+                        break;
+                    }
+                }
+                if (dominated){
+                    frontier.clear();
+                    continue;
+                }
+            }
             checkFrontierCut(frontier.bucket(), frontier.g()); // TODO: P10: What this do?
             filterFrontier();
         }
