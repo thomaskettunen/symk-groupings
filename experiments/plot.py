@@ -258,7 +258,7 @@ def main():
     for group_count in tqdm([int(run["#Groups"]) for (s, g) in runs if s == search for run in runs[(s, g)] if run.has({"coverage": 1})], leave=False):
       group_counts[group_count] = group_counts.get(group_count, 0) + 1
 
-    x = sorted(group_counts)
+    x = sorted([group_count for group_count in group_counts if group_count <= 50])
     y = [group_counts[group_count] for group_count in x]
     plt.bar(
       [xi - ((i - (n_bars - 1) / 2) * width) for xi in x],
@@ -278,28 +278,29 @@ def main():
 
   ## exit code table
   print(" - exit code table")
-  all_codes = set()
-  exit_codes = {}
-  for (search, grouping) in tqdm(runs):
-    exit_codes[(search, grouping)] = {"total": 0}
-    for exit_code in tqdm([run["exit_code"].removeprefix("ExitCode.") for run in runs[(search, grouping)]], leave=False):
-      all_codes.add(exit_code)
-      exit_codes[(search, grouping)][exit_code] = exit_codes[(search, grouping)].get(exit_code, 0) + 1
-      exit_codes[(search, grouping)]["total"] += 1
+  for grouping in tqdm(groupings):
+    all_codes = set()
+    exit_codes = {}
+    for search in tqdm(searches, leave=False):
+      exit_codes[search] = {"total": 0}
+      for exit_code in tqdm([run["exit_code"].removeprefix("ExitCode.") for run in runs[(search, grouping)]], leave=False):
+        all_codes.add(exit_code)
+        exit_codes[search][exit_code] = exit_codes[search].get(exit_code, 0) + 1
+        exit_codes[search]["total"] += 1
 
-  w0 = max(len("total"), *[len(f"{search} {grouping}") for (search, grouping) in exit_codes])
-  w_rest = max([len(exit_code) for exit_code in all_codes])
+    w0 = max(len("total"), len(grouping), *[len(search) for search in exit_codes])
+    w_rest = max([len(exit_code) for exit_code in all_codes])
 
-  print(f"{"":>{w0}}", end=" | ")
-  for exit_code in all_codes:
-    print(f"{exit_code:^{w_rest}}", end=" | ")
-  print(f"{"total":^{w_rest}}", end=" | \n")
-
-  for (search, grouping) in exit_codes:
-    print(f"{f"{search} {grouping}":>{w0}}", end=" | ")
+    print(f"{grouping:>{w0}}", end=" | ")
     for exit_code in all_codes:
-      print(f"{exit_codes[(search, grouping)].get(exit_code, 0):^{w_rest}}", end=" | ")
-    print(f"{exit_codes[(search, grouping)]["total"]:^{w_rest}}", end=" | \n")
+      print(f"{exit_code:^{w_rest}}", end=" | ")
+    print(f"{"total":^{w_rest}}", end=" | \n")
+
+    for search in exit_codes:
+      print(f"{search:>{w0}}", end=" | ")
+      for exit_code in all_codes:
+        print(f"{exit_codes[search].get(exit_code, 0):^{w_rest}}", end=" | ")
+      print(f"{exit_codes[search]["total"]:^{w_rest}}", end=" | \n")
 
   print("Done")
 
