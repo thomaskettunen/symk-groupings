@@ -12,7 +12,7 @@ import matplotlib.colors as mcolors
 import math
 import importlib.util
 
-if importlib.util.find_spec("tqdm") is not None:  
+if importlib.util.find_spec("tqdm") is not None:
   from tqdm import tqdm
   print = tqdm.write
 else:
@@ -69,23 +69,35 @@ class X:
 def main():
   print("Starting")
   plot_dir = ensure_dir("plots")
-  run_filter = [
-    # {"domain": "organic-synthesis-split-opt18-strips", "problem": "p08.pddl", "grouping": "prefix(1)"}, #. Errors on all
-    # {"domain": "organic-synthesis-split-opt18-strips", "problem": "p08.pddl", "grouping": "prefix(2)"}, #. Errors on all
-    # {"domain": "organic-synthesis-split-opt18-strips", "problem": "p13.pddl", "grouping": "prefix(1)"}, #. One of the symk runs dies before the other during preprocess
-    # {"domain": "organic-synthesis-split-opt18-strips", "problem": "p16.pddl", "grouping": "prefix(1)"}, #. One of the symk runs dies before the other during preprocess
-    # {"domain": "airport", "problem": "p47-airport5MUC-p8.pddl", "grouping": "prefix(2)"},               #. One of the symk runs dies before the other during preprocess
-  ]
 
   with open("./data/experiments-eval/properties", 'r') as f:
     properties = json.loads(f.read())
-  all_runs = [X((key, properties[key])) for key in properties if not any([X((key, properties[key])).has(filtered) for filtered in run_filter])]
+  print(" - loading from disk")
+  unfiltered_runs = [X((key, properties[key])) for key in tqdm(properties)]
+
+  print(" - generating filter")
+  run_filter = [
+    {"domain": "airport", "problem": "p35-airport4halfMUC-p12.pddl", "grouping": "prefix(1)"}, # One time preprocess gave up, so different #Groups
+    *[{"domain": domain, "problem": problem, "grouping": grouping} for domain, problem, grouping in set([(run["domain"], run["problem"], run["grouping"]) for run in tqdm(unfiltered_runs) if (
+      run.has({"error": 1})
+      or run.has({"exit_code": ["ExitCode.OTHER_ERROR", "ExitCode.PREPROCESS_ERR", "ExitCode.OUT_OF_SPACE", "ExitCode.TRANSLATE_OUT_OF_MEM"]})
+    )])]
+  ]
+
+  print("Filter:")
+  for filtered in run_filter:
+    print(f"\t{filtered}")
+
+  print(" - filtering data")
+  all_runs = [run for run in tqdm(unfiltered_runs) if not any([run.has(filtered) for filtered in run_filter])]
+
+  print(" - preprocessing")
   runs = {}
-  for run in all_runs:
+  for run in tqdm(all_runs):
     runs[(run["search"], run["grouping"])] = runs.get((run["search"], run["grouping"]), []) + [run]
 
   runs_T = {}
-  for run in all_runs:
+  for run in tqdm(all_runs):
     runs_T[(run["domain"], run["problem"], run["grouping"])] = runs_T.get((run["domain"], run["problem"], run["grouping"]), {})
     runs_T[(run["domain"], run["problem"], run["grouping"])][run["search"]] = run
 
@@ -155,7 +167,7 @@ def main():
 
       plt.xscale("log")
       plt.xticks(
-        [10**e for e in range(0, int(math.ceil(math.log10(ks[-1]))) + 1)], 
+        [10**e for e in range(0, int(math.ceil(math.log10(ks[-1]))) + 1)],
         [rf"$10^{{{e}}}$" for e in range(0, int(math.ceil(math.log10(ks[-1]))) + 1)],
       )
       plt.xlabel("K")
@@ -252,7 +264,7 @@ def main():
       [xi - ((i - (n_bars - 1) / 2) * width) for xi in x],
       y,
       width = width,
-      label = f"{search}", 
+      label = f"{search}",
     )
 
   plt.xlabel("#Groups")
