@@ -66,6 +66,15 @@ class X:
       else: return False
     return True
 
+def latex_table(data):
+  return rf"""\begin{{adjustbox}}{{width=\columnwidth,center}}
+  \begin{{tabular}}{{|{"|".join(["c" for _ in data[0]])}|}}
+    \hline
+    {" \\\\\\hline\n  ".join([" & ".join([f"{cell}".replace("_", " ") for cell in row]) for row in data])} \\\hline
+  \end{{tabular}}
+\end{{adjustbox}}
+"""
+
 def main():
   print("Starting")
   plot_dir = ensure_dir("plots")
@@ -301,6 +310,40 @@ def main():
       for exit_code in all_codes:
         print(f"{exit_codes[search].get(exit_code, 0):^{w_rest}}", end=" | ")
       print(f"{exit_codes[search]["total"]:^{w_rest}}", end=" | \n")
+
+    ### latex
+    with open(f"{ensure_dir(f'{plot_dir}/tables/exit_code')}/{grouping}.tex", "w", encoding="utf-8") as f:
+      f.write(latex_table([[grouping, *all_codes]] + [[search] + [exit_codes[search].get(exit_code, 0) for exit_code in all_codes] for search in searches]))
+
+
+  ## summary table
+  print(" - summary table")
+  rows = ["coverage", "total_time", "plans_found"]
+  for grouping in tqdm(groupings):
+    columns = {}
+    for search in tqdm(searches, leave=False):
+      columns[search] = {row: 0 for row in rows}
+      for run in tqdm(runs[(search, grouping)], leave=False):
+        for row in rows:
+          columns[search][row] += run[row]
+
+    w0 = max(len(grouping), *[len(row) for row in rows])
+    w_rest = max([len(search) for search in searches] + [len(f"{columns[search].get(row, 0)}") for row in rows for search in searches])
+
+    print(f"{grouping:>{w0}}", end=" | ")
+    for search in searches:
+      print(f"{search:^{w_rest}}", end=" | ")
+    print("")
+
+    for row in rows:
+      print(f"{row:>{w0}}", end=" | ")
+      for search in searches:
+        print(f"{columns[search].get(row, 0):^{w_rest}.2f}", end=" | ")
+      print("")
+
+    ### latex
+    with open(f"{ensure_dir(f'{plot_dir}/tables/summary')}/{grouping}.tex", "w", encoding="utf-8") as f:
+      f.write(latex_table([[grouping, *searches]] + [[row] + [int(columns[search].get(row, 0)) for row in rows] for search in searches]))
 
   print("Done")
 
