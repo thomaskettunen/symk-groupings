@@ -25,9 +25,7 @@ string BidirectionalSearch::get_last_dir() const {
 }
 
 UniformCostSearch *BidirectionalSearch::selectBestDirection() {
-    if (fw->open_list->open.empty()) return bw.get();
-    if (bw->open_list->open.empty()) return fw.get();
-    return (fw->open_list->open).begin()->first < (bw->open_list->open).begin()->first ? fw.get() : bw.get();
+    return fw->frontier.g() < bw->frontier.g() ? fw.get() : bw.get();
     // if () {
     //     if (!cur_dir) {
     //         cur_dir = fw;
