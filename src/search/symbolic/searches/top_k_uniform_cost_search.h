@@ -7,8 +7,7 @@
 namespace symbolic {
 class TopkUniformCostSearch : public UniformCostSearch {
 protected:
-    virtual void checkFrontierCut(Bucket &bucket, Cost g) override;
-    virtual void filterFrontier() override;
+    virtual void checkFrontierCut() override;
 public:
     TopkUniformCostSearch(SymbolicSearch *eng, const SymParameters &params): UniformCostSearch(eng, params) {}
 };

@@ -23,13 +23,19 @@ typedef std::priority_queue<ReconstructionNode, std::vector<ReconstructionNode>,
 
 class UniformCostSearch;
 class ClosedList;
+class OpenList;
+class Frontier;
 
 class SymSolutionRegistry {
 protected:
     std::map<Cost, std::vector<SymSolutionCut>> sym_cuts;
     std::shared_ptr<SymVariables> sym_vars;
     std::shared_ptr<ClosedList> fw_closed;
+    std::shared_ptr<OpenList> fw_open;
+    std::shared_ptr<Frontier> fw_frontier;
     std::shared_ptr<ClosedList> bw_closed;
+    std::shared_ptr<OpenList> bw_open;
+    std::shared_ptr<Frontier> bw_frontier;
     std::shared_ptr<TopKSelector> plan_data_base;
     std::shared_ptr<SymTransitionRelations> sym_transition_relations;
 
@@ -48,12 +54,17 @@ protected:
     bool task_has_zero_costs() const { return sym_transition_relations->has_zero_cost_transition(); }
 
 public:
-    SymSolutionRegistry();
+    bool silent = false;
+    SymSolutionRegistry(bool silent);
 
     void init(
         std::shared_ptr<SymVariables> sym_vars,
-        std::shared_ptr<symbolic::ClosedList> fw_closed,
-        std::shared_ptr<symbolic::ClosedList> bw_closed,
+        std::shared_ptr<ClosedList> fw_closed,
+        std::shared_ptr<OpenList> fw_open,
+        std::shared_ptr<Frontier> fw_frontier,
+        std::shared_ptr<ClosedList> bw_closed,
+        std::shared_ptr<OpenList> bw_open,
+        std::shared_ptr<Frontier> bw_frontier,
         std::shared_ptr<SymTransitionRelations> sym_transition_relations,
         std::shared_ptr<TopKSelector> plan_data_base
     );

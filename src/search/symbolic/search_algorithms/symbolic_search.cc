@@ -24,7 +24,7 @@ SymbolicSearch::SymbolicSearch(const plugins::Options &opts)
       sym_params(opts, task),
       step_num(-1),
       plan_data_base(make_shared<TopKSelector>(opts.get<int>("k"), opts.get<bool>("dump_plans"), opts.get<bool>("write_plans"))),
-      solution_registry(make_shared<SymSolutionRegistry>()),
+      solution_registry(make_shared<SymSolutionRegistry>(opts.get<bool>("silent"))),
       silent(opts.get<bool>("silent")) {
     cout << endl;
     vars->print_options();
@@ -88,7 +88,7 @@ SearchStatus SymbolicSearch::step() {
         }
     }
 
-    if (!silent) {
+    if (!silent && false) {
         utils::g_log << " [" << solution_registry->get_num_found_plans() << "/" << plan_data_base->get_num_desired_plans() << " plans]" << flush;
         if (step_num > 0) {
             utils::g_log << ", dir: " << search->get_last_dir() << flush;

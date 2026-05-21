@@ -187,21 +187,29 @@ bool SymSolutionRegistry::is_solution(const ReconstructionNode &node) const {
     return !(node.get_states() * closed->get_start_states()).IsZero();
 }
 
-SymSolutionRegistry::SymSolutionRegistry(): fw_closed(nullptr), bw_closed(nullptr), plan_data_base(nullptr) {
+SymSolutionRegistry::SymSolutionRegistry(bool silent): fw_closed(nullptr), bw_closed(nullptr), plan_data_base(nullptr), silent(silent) {
     queue = ReconstructionQueue(CompareReconstructionNodes(ReconstructionPriority::REMAINING_COST));
 }
 
 void SymSolutionRegistry::init(
     shared_ptr<SymVariables> sym_vars,
     shared_ptr<symbolic::ClosedList> fw_closed,
+    shared_ptr<symbolic::OpenList> fw_open,
+    shared_ptr<symbolic::Frontier> fw_frontier,
     shared_ptr<symbolic::ClosedList> bw_closed,
+    shared_ptr<symbolic::OpenList> bw_open,
+    shared_ptr<symbolic::Frontier> bw_frontier,
     shared_ptr<SymTransitionRelations> sym_transition_relations,
     shared_ptr<TopKSelector> plan_data_base
 ) {
     this->sym_vars = sym_vars;
     this->plan_data_base = plan_data_base;
     this->fw_closed = fw_closed;
+    this->fw_open = fw_open;
+    this->fw_frontier = fw_frontier;
     this->bw_closed = bw_closed;
+    this->bw_open = bw_open;
+    this->bw_frontier = bw_frontier;
     this->sym_transition_relations = sym_transition_relations;
 
     // If unit costs we simple use sort by remaining cost
@@ -228,15 +236,49 @@ void SymSolutionRegistry::register_solution(const SymSolutionCut &solution) {
 }
 
 void SymSolutionRegistry::construct_cheaper_solutions() {
+    if (!silent) utils::g_log << "Constructing cheaper solutions" << std::endl;
     for (auto it = sym_cuts.begin(); it != sym_cuts.end();) {
         const auto& [cost, cuts] = *it;
         if (found_k_plans()) break;
 
+        // NOTE: P10: Check if it's still possible to create find a better plan
+        if (fw_frontier && bw_frontier) {
+            if ((fw_frontier->last_g + bw_frontier->last_g).dominates(cost)) goto skip;
+            if (!silent) utils::g_log << "\t" << fw_frontier->last_g << " + " << bw_frontier->last_g << " = " <<  (fw_frontier->last_g + bw_frontier->last_g) << " does not dominate " << cost << std::endl;
+            if ((fw_frontier->last_g + bw_frontier->g()).dominates(cost)) goto skip;
+            if (!silent) utils::g_log << "\t" << fw_frontier->last_g << " + " << bw_frontier->g() << " = " <<  (fw_frontier->last_g + bw_frontier->g()) << " does not dominate " << cost << std::endl;
+            if ((fw_frontier->g() + bw_frontier->last_g).dominates(cost)) goto skip;
+            if (!silent) utils::g_log << "\t" << fw_frontier->g() << " + " << bw_frontier->last_g << " = " <<  (fw_frontier->g() + bw_frontier->last_g) << " does not dominate " << cost << std::endl;
+            if ((fw_frontier->g() + bw_frontier->g()).dominates(cost)) goto skip;
+            if (!silent) utils::g_log << "\t" << fw_frontier->g() << " + " << bw_frontier->g() << " = " <<  (fw_frontier->g() + bw_frontier->g()) << " does not dominate " << cost << std::endl;
+            for (auto &[bw_cost, _] : bw_open->open) {
+                if ((fw_frontier->last_g + bw_cost).dominates(cost)) goto skip;
+                if (!silent) utils::g_log << "\t" << fw_frontier->last_g << " + " << bw_cost << " = " << (fw_frontier->last_g + bw_cost) << " does not dominate " << cost << std::endl;
+                if ((fw_frontier->g() + bw_cost).dominates(cost)) goto skip;
+                if (!silent) utils::g_log << "\t" << fw_frontier->g() << " + " << bw_cost << " = " << (fw_frontier->g() + bw_cost) << " does not dominate " << cost << std::endl;
+            }
+            for (auto &[fw_cost, _] : fw_open->open) {
+                if ((fw_cost + bw_frontier->last_g).dominates(cost)) goto skip;
+                if (!silent) utils::g_log << "\t" << fw_cost << " + " << bw_frontier->last_g << " = " << (fw_cost + bw_frontier->last_g) << " does not dominate " << cost << std::endl;
+                if ((fw_cost + bw_frontier->g()).dominates(cost)) goto skip;
+                if (!silent) utils::g_log << "\t" << fw_cost << " + " << bw_frontier->g() << " = " << (fw_cost + bw_frontier->g()) << " does not dominate " << cost << std::endl;
+                for (auto &[bw_cost, _] : bw_open->open) {
+                    if ((fw_cost + bw_cost).dominates(cost)) goto skip;
+                    if (!silent) utils::g_log << "\t" << fw_cost << " + " << bw_cost << " = " << (fw_cost + bw_cost) << " does not dominate " << cost << std::endl;
+                }
+            } 
+        }
+
         reconstruction_timer.resume();
         reconstruct_plans(cuts);
         reconstruction_timer.stop();
-
+        
         it = sym_cuts.erase(it);
+        goto _continue;
+        skip:
+        if (!silent) utils::g_log << "Skipping: " << cost << std::endl;
+        ++it;
+        _continue:;
     }
 }
 }

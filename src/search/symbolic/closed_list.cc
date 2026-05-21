@@ -16,8 +16,6 @@
 using namespace std;
 
 namespace symbolic {
-ClosedList::ClosedList() : mgr(nullptr) {
-}
 
 void ClosedList::init(SymStateSpaceManager *manager) {
     mgr = manager;
@@ -36,7 +34,8 @@ void ClosedList::init(SymStateSpaceManager *manager, const ClosedList &other) {
     closed[Cost::MIN] = closedTotal;
 }
 
-void ClosedList::insert(Cost h, BDD S) {
+void ClosedList::insert(Cost h, BDD S, bool fw) {
+    if (!silent) utils::g_log << "ClosedList [" << (fw ? "->" : "<-") << "] inserted: " << h << std::endl;
     if (closed.count(h)) {
         closed[h] += S;
     } else {

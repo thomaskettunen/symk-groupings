@@ -20,24 +20,19 @@ public:
     TruncatedReason truncated_reason;
     double time_spent;
 
-    Result(double t) : ok(true), time_spent(t) {
-    }
-    Result(TruncatedReason reason, double t)
-        : ok(false), truncated_reason(reason), time_spent(t) {
-    }
+    Result(double t) : ok(true), time_spent(t) {}
+    Result(TruncatedReason reason, double t) : ok(false), truncated_reason(reason), time_spent(t) {}
 };
 
-class ResultExpansion : public Result {
+class ExpansionResult : public Result {
 public:
     bool step_zero;
     std::vector<std::map<Cost, Bucket>> buckets;
-    ResultExpansion(
-        bool step_zero_, std::vector<std::map<Cost, Bucket>> &buckets_, double t)
-        : Result(t), step_zero(step_zero_) {
+    ExpansionResult(bool step_zero_, std::vector<std::map<Cost, Bucket>> &buckets_, double t) : Result(t), step_zero(step_zero_) {
         buckets.swap(buckets_);
     }
 
-    ResultExpansion(bool step_zero_, TruncatedReason reason, double t)
+    ExpansionResult(bool step_zero_, TruncatedReason reason, double t)
         : Result(reason, t), step_zero(step_zero_) {
     }
 };
@@ -45,63 +40,41 @@ public:
 class Frontier { // Current states extracted from the open list
     SymStateSpaceManager *mgr;
 
-    Bucket Sfilter; // current g-bucket without duplicates and h-classified
-                    // (still not filtered mutexes)
-    Bucket Smerge; // bucket before applying merge
-    Bucket Szero; // bucket to expand 0-cost transitions
-    Bucket S; // bucket to expand cost transitions
-
-    // bucket to store temporary image results in expand_zero() and
-    // expand_cost() For each BDD in Szero or S, stores a map with pairs <cost,
-    // resImage>
-    std::vector<std::map<Cost, Bucket>> Simg;
-
+    Bucket states; 
     Cost g_value;
 
-    ResultExpansion expand_zero(int maxTime, int maxNodes, bool fw);
-    ResultExpansion expand_cost(int maxTime, int maxNodes, bool fw);
+    ExpansionResult expand_zero(int maxTime, int maxNodes, bool fw);
+    ExpansionResult expand_cost(int maxTime, int maxNodes, bool fw);
 
+    bool silent = false;
 public:
-    Frontier();
+    Cost last_g;
+    Frontier(bool silent) : mgr(nullptr), g_value(Cost::INVALID), last_g(Cost::INVALID), silent(silent) { }
 
-    void init(SymStateSpaceManager *mgr, const BDD &bdd);
-    void set(Cost g, Bucket &open);
-    void clear();
-
-    Result prepare(int maxTime, int maxNodes, bool fw, bool initialization);
-
-    bool empty() const;
-    bool bucketReady() const;
-    bool expansionReady() const;
-    bool nextStepZero() const;
-
-    int nodes() const;
-    int buckets() const;
-
-    Cost g() const {
-        return g_value;
+    void init(SymStateSpaceManager *mgr_, const BDD &bdd) {
+        mgr = mgr_;
+        states.push_back(bdd);
+        g_value = Cost::MIN;
     }
 
-    Bucket &prepared_bucket() {
-        assert(Sfilter.empty());
-        assert(Smerge.empty());
-        // assert(Szero.empty() || S.empty());
-        // assert(!Szero.empty() || !S.empty());
+    void set(Cost g, Bucket &bdd) {
+        assert(empty());
+        g_value = g;
+        states.swap(bdd);
+    }
 
-        return Szero.empty() ? S : Szero;
-    }
-    Bucket &bucket() {
-        assert(Smerge.empty());
-        assert(Szero.empty());
-        assert(S.empty());
-        return Sfilter;
-    }
+    void clear() { Bucket().swap(states); }
+
+    bool empty() const {return states.empty(); }
+    int nodes() const { return nodeCount(states); }
+    int buckets() const { return states.size(); }
+    Cost g() const { return g_value; }
+    Bucket &bucket() { return states; }
 
     void filter(const std::shared_ptr<ClosedList> closed);
 
-    ResultExpansion expand(int maxTime, int maxNodes, bool fw) {
-        assert(Smerge.empty() && Sfilter.empty());
-        if (!Szero.empty()) {
+    ExpansionResult expand(int maxTime, int maxNodes, bool fw) {
+        if (false) { // TODO: P10: Ignore zero cost for now
             return expand_zero(maxTime, maxNodes, fw);
         }
 

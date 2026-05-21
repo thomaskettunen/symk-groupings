@@ -8,7 +8,7 @@ using namespace std;
 namespace symbolic {
 /// @brief Removes empty BBD's from the bucket
 /// @param bucket 
-void remove_zero(Bucket &bucket) {
+void remove_zeroBDDs(Bucket &bucket) {
     bucket.erase(
         remove_if(begin(bucket), end(bucket), [](BDD &bdd) { return bdd.IsZero(); }), 
         end(bucket)
@@ -46,7 +46,7 @@ bool extract_states(Bucket &list, const Bucket &pruned, Bucket &res) {
             res.push_back(prun);
         }
     }
-    remove_zero(list);
+    remove_zeroBDDs(list);
     return somethingPruned;
 }
 

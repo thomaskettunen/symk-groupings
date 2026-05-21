@@ -77,6 +77,11 @@ public:
     static void add_options_to_feature(plugins::Feature &feature);
 
     bool search_done = false;
+
+    std::shared_ptr<OpenList> fw_open = nullptr;
+    std::shared_ptr<OpenList> bw_open = nullptr;
+    std::shared_ptr<Frontier> fw_frontier = nullptr;
+    std::shared_ptr<Frontier> bw_frontier = nullptr;
 };
 }
 

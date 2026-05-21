@@ -40,11 +40,11 @@ namespace grouping {
     class Const : public GroupingFunction {
     public:
         Const(TaskProxy task) : GroupingFunction(task) {}
-        GroupID operator()(OperatorID op) override { return 0; }
+        GroupID operator()(OperatorID) override { return 0; }
         std::set<GroupID> get_groups() override { 
             return std::set<GroupID> { 0 };
         }
-        std::string get_group_name(GroupID op) override { return std::string("The Group"); }
+        std::string get_group_name(GroupID) override { return std::string("The Group"); }
         std::string to_string() override { return std::string("Grouping(Constant)"); }
     };
 

@@ -68,7 +68,7 @@ public:
             return bdd.Or(bdd2, maxNodes);
         };
         merge(sym_vars, bucket, mergeBDDs, maxTime, maxNodes);
-        remove_zero(bucket); // Be sure that we do not contain only the zero BDD
+        remove_zeroBDDs(bucket); // Be sure that we do not contain only the zero BDD
 
         return bucket.size() <= 1;
     }
@@ -78,7 +78,7 @@ public:
             return bdd.And(bdd2, maxNodes);
         };
         merge(sym_vars, bucket, mergeBDDs, maxTime, maxNodes);
-        remove_zero(bucket); // Be sure that we do not contain only the zero BDD
+        remove_zeroBDDs(bucket); // Be sure that we do not contain only the zero BDD
 
         return bucket.size() <= 1;
     }

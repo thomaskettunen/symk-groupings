@@ -20,6 +20,9 @@ class OpenList {
     void closeMinOpen();
 
 public:
+    bool silent = false;
+    OpenList(bool silent) : silent(silent) {};
+
     std::map<symbolic::Cost, Bucket> open; // States in open with unkwown h-value
 
     bool empty() const {

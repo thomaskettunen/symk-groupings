@@ -7,15 +7,12 @@
 using namespace std;
 
 namespace symbolic {
-BidirectionalSearch::BidirectionalSearch(
-    SymbolicSearch *eng, const SymParameters &params,
-    shared_ptr<UniformCostSearch> _fw, shared_ptr<UniformCostSearch> _bw,
-    bool )
+BidirectionalSearch::BidirectionalSearch( SymbolicSearch *eng, const SymParameters &params, shared_ptr<UniformCostSearch> _fw, shared_ptr<UniformCostSearch> _bw, bool _alternating)
     : SymSearch(eng, params),
-      fw(alternating ? _bw : _fw), // NOTE: P10: Use "alternating" to swap the order of comparisons laster
-      bw(alternating ? _fw : _bw),
+      fw(_alternating ? _bw : _fw), // NOTE: P10: Use "alternating" to swap the order of comparisons laster
+      bw(_alternating ? _fw : _bw),
       cur_dir(nullptr),
-      alternating(alternating) {
+      alternating(_alternating) {
     assert(fw->getStateSpace() == bw->getStateSpace());
     mgr = fw->getStateSpaceShared();
 }
@@ -25,32 +22,14 @@ string BidirectionalSearch::get_last_dir() const {
 }
 
 UniformCostSearch *BidirectionalSearch::selectBestDirection() {
-    return fw->frontier.g() < bw->frontier.g() ? fw.get() : bw.get();
-    // if () {
-    //     if (!cur_dir) {
-    //         cur_dir = fw;
-    //     } else {
-    //         if (cur_dir == fw) {
-    //             cur_dir = bw;
-    //         } else {
-    //             cur_dir = fw;
-    //         }
-    //     }
-    // } else {
-    //     Estimation &fw_est = *fw->get_step_estimator();
-    //     Estimation &bw_est = *bw->get_step_estimator();
-    //     if (fw_est.get_failed() && bw_est.get_failed()) {
-    //         sym_params.increase_bound();
-    //         bw_est.set_data(bw_est.get_time(), bw_est.get_nodes(), false);
-    //         return fw.get();
-    //     }
-    //     /*utils::g_log << "FWD: " << fw_est << endl;
-    //     utils::g_log << "BWD: " << bw_est << endl;
-    //     utils::g_log << ((bw_est < fw_est) ? "bw" : "fw") << endl;*/
-    //     cur_dir = (bw_est < fw_est) ? bw : fw;
-    // }
-
-    // return cur_dir.get();
+    if (!engine->is_silent()) utils::g_log << "selecting best direction: ";
+    if (fw->frontier->g() < bw->frontier->g()) {
+        if (!engine->is_silent()) utils::g_log << (fw.get()->fw ? "[->]" : "[<-]") << " fw.g(): " << fw->frontier->g() << ", bw.g(): " << bw->frontier->g() << std::endl;
+        return fw.get();
+    } else {
+        if (!engine->is_silent()) utils::g_log << (bw.get()->fw ? "[->]" : "[<-]") << " fw.g(): " << fw->frontier->g() << ", bw.g(): " << bw->frontier->g() << std::endl;
+        return bw.get();
+    }
 }
 
 bool BidirectionalSearch::finished() const {

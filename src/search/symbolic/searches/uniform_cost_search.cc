@@ -16,16 +16,17 @@
 #include "../cost.h"
 #include "../pareto_front.h"
 
+#define log(x) do { if(!engine->is_silent()) utils::g_log << "[" << (fw ? "->" : "<-") << "]: " << x << std::endl; } while(0)
+
 using namespace std;
 
 namespace symbolic {
-UniformCostSearch::UniformCostSearch(
-    SymbolicSearch *eng, const SymParameters &params)
+UniformCostSearch::UniformCostSearch(SymbolicSearch *eng, const SymParameters &params)
     : SymSearch(eng, params),
       fw(true),
-      step_estimation(0, 0, false),
-      closed(make_shared<ClosedList>()),
-      open_list(make_shared<OpenList>()),
+      closed(make_shared<ClosedList>(engine->is_silent())),
+      open_list(make_shared<OpenList>(engine->is_silent())),
+      frontier(make_shared<Frontier>(engine->is_silent())),
       lastStepCost(true),
       last_g_cost(Cost::MIN) {
 }
@@ -40,140 +41,108 @@ bool UniformCostSearch::init(
     assert(mgr);
 
     BDD init_bdd = fw ? mgr->get_initial_state() : mgr->get_goal();
-    frontier.init(manager.get(), init_bdd);
+    frontier->init(manager.get(), init_bdd);
 
     closed->init(mgr.get());
-    closed->insert(Cost::MIN, init_bdd);
+    closed->insert(Cost::MIN, init_bdd, fw);
 
     if (opposite_search) {
         perfectHeuristic = opposite_search->getClosedShared();
         oppositeOpenList = opposite_search->open_list;
     } else {
-        perfectHeuristic = make_shared<ClosedList>();
+        perfectHeuristic = make_shared<ClosedList>(engine->is_silent());
         perfectHeuristic->init(mgr.get());
         if (fw) {
-            perfectHeuristic->insert(Cost::MIN, mgr->get_goal());
+            perfectHeuristic->insert(Cost::MIN, mgr->get_goal(), fw);
         } else {
-            perfectHeuristic->insert(Cost::MIN, mgr->get_initial_state());
+            perfectHeuristic->insert(Cost::MIN, mgr->get_initial_state(), fw);
         }
     }
 
-    prepareBucket();
+    advanceFrontier();
 
     return true;
 }
 
-void UniformCostSearch::checkFrontierCut(Bucket &bucket, Cost g) {
-    if (sym_params.non_stop) {
-        return;
-    }
+void UniformCostSearch::checkFrontierCut() {
+    if (sym_params.non_stop) return;
 
-    for (BDD &bucketBDD : bucket) {
-        auto sol = perfectHeuristic->getCheapestCut(bucketBDD, g, fw);
-        if (sol.get_f() >= Cost::MIN) {
+    for (BDD &bucketBDD : frontier->bucket()) {
+        auto sol = perfectHeuristic->getCheapestCut(bucketBDD, frontier->g(), fw);
+        if (sol.get_f().is_valid()) {
             engine->new_solution(sol);
+            log("found solution " << sol);
         }
-        // Prune everything closed in opposite direction
-        bucketBDD *= perfectHeuristic->notClosed();
+        bucketBDD *= perfectHeuristic->notClosed(); // Prune everything closed in opposite direction
     }
 }
 
-bool UniformCostSearch::provable_no_more_plans() {
-    return open_list->empty();
-}
-
-bool UniformCostSearch::prepareBucket() {
-    if (!frontier.bucketReady()) { // NOTE: P10: Is this check really required?
-        while (frontier.empty()) {
-            if(open_list->empty()) { // NOTE: P10: hacky solution to stop when frontier is empty do not forge
-                engine->search_done = true;
-                utils::g_log << "Completed search, open list empty" << std::endl;
-                return true;
-            }
-            open_list->pop(frontier);
-            last_g_cost = frontier.g();
-            if (oppositeOpenList) {
-                bool dominated = !oppositeOpenList->open.empty();
-                for (auto &[cost, bucket] : oppositeOpenList->open) {
-                    if (!pareto_front::dominates(last_g_cost + cost)) {
-                        dominated = false;
-                        break;
-                    }
-                }
-                if (dominated){
-                    frontier.clear();
-                    continue;
+/// @brief Advances the frontier to the next (valid) state
+void UniformCostSearch::advanceFrontier() {
+    Cost last_g = frontier->g();
+    while (frontier->empty()) {
+        if(open_list->empty()) { // NOTE: P10: hacky solution to stop when frontier is empty do not forge
+            engine->search_done = true;
+            utils::g_log << "Completed search, open list empty" << std::endl;
+            return;
+        }
+        open_list->pop(*frontier);
+        last_g_cost = frontier->g();
+        if (oppositeOpenList) {
+            bool dominated = !oppositeOpenList->open.empty();
+            for (auto &[cost, bucket] : oppositeOpenList->open) {
+                if (!pareto_front::dominates(last_g_cost + cost)) {
+                    dominated = false;
+                    break;
                 }
             }
-            checkFrontierCut(frontier.bucket(), frontier.g()); // TODO: P10: What this do?
-            filterFrontier();
-        }
-
-        // Close and move to reopen
-        if (!lastStepCost || frontier.g() != Cost::MIN) { // Avoid closing init twice
-            for (const BDD &states : frontier.bucket()) {
-                closed->insert(frontier.g(), states);
+            if (dominated){
+                frontier->clear();
+                continue;
             }
         }
+        filterFrontier();
     }
-
-    return false;
+    frontier->last_g = last_g;
+    log("advanced frontier from " << frontier->last_g << " to " << frontier->g());
 }
 
 // Here we filter states: remove closed states and mutex states
 // This procedure is delayed in comparision to explicit search
 // Idea: no need to "change" BDDs until we actually process them
 void UniformCostSearch::filterFrontier() {
-    frontier.filter(closed);
-    mgr->filter_mutex(frontier.bucket(), fw, initialization());
-    remove_zero(frontier.bucket());
+    frontier->filter(closed);
+    mgr->filter_mutex(frontier->bucket(), fw, false);
+    remove_zeroBDDs(frontier->bucket());
+}
+
+/// @brief Expands the current frontier into the open list; empties the frontiers state
+void UniformCostSearch::expandFrontier(int maxTime, int maxNodes) {
+    ExpansionResult res_expansion = frontier->expand(maxTime, maxNodes, fw);
+    assert(res_expansion.ok);
+
+    lastStepCost = false; /// TODO: P10: Must be set to flase before check cut?
+    for (auto &resImage : res_expansion.buckets) {
+        for (auto &[imageCost, bucket] : resImage) {
+            Cost cost = frontier->g() + imageCost;
+            
+            mgr->merge_bucket(bucket); // NOTE: P10: (Potentially) merges some of the BDDs in the bucket
+
+            for (auto &bdd : bucket) {
+                assert(!bdd.IsZero()); // NOTE: P10: merge_bucket above removes zeroBDDs
+                open_list->insert(bdd, cost);
+            }
+        }
+    }
+    log("expanded frontier: " << frontier->g());
 }
 
 void UniformCostSearch::stepImage(int maxTime, int maxNodes) {
-    utils::Timer step_timer;
-    bool done = prepareBucket();
-    if (done) {
-        return;
-    }
-
-    Result prepare_res = frontier.prepare(maxTime, maxNodes, fw, initialization());
-    if (!prepare_res.ok) {
-        step_estimation.set_data(step_timer(), frontier.nodes(), !prepare_res.ok);
-        return;
-    }
-
-    if (engine->solved()) {
-        return; // Skip image if we are done
-    }
-
-    int stepNodes = frontier.nodes();
-    ResultExpansion res_expansion = frontier.expand(maxTime, maxNodes, fw);
-
-    if (res_expansion.ok) {
-        lastStepCost = false; // Must be set to false before calling checkCut
-        // Process Simg, removing duplicates and computing h. Store in Sfilter
-        // and reopen. Include new states in the open list
-        for (auto &resImage : res_expansion.buckets) {
-            for (auto &[imageCost, bucket] : resImage) {
-                Cost cost = frontier.g() + imageCost;
-                
-                mgr->merge_bucket(bucket);
-
-                for (auto &bdd : bucket) {
-                    if (!bdd.IsZero()) {
-                        stepNodes = max(stepNodes, bdd.nodeCount());
-                        open_list->insert(bdd, cost);
-                    }
-                }
-            }
-        }
-        if(!engine->is_silent()) utils::g_log << "expanded frontier [" << (fw ? "->" : "<-") << "]: " << frontier.g() << " frontier nodes: " << stepNodes << std::endl;
-    }
-
-    while (!frontier.bucketReady() && !open_list->empty()) {
-        prepareBucket();
-    }
-
-    step_estimation.set_data(step_timer(), stepNodes, !res_expansion.ok);
+    log("UniformCostSearch::stepImage");
+    checkFrontierCut();
+    for (const BDD &states : frontier->bucket()) closed->insert(frontier->g(), states, fw);
+    if (engine->solved()) return;
+    expandFrontier(maxTime, maxNodes);
+    advanceFrontier();
 }
 }

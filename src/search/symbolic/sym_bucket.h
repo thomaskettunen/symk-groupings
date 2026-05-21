@@ -11,7 +11,7 @@
 namespace symbolic {
 typedef std::vector<BDD> Bucket;
 
-void remove_zero(Bucket &bucket);
+void remove_zeroBDDs(Bucket &bucket);
 void copy_bucket(const Bucket &bucket, Bucket &res);
 int nodeCount(const Bucket &bucket);
 bool extract_states(Bucket &list, const Bucket &pruned, Bucket &res);

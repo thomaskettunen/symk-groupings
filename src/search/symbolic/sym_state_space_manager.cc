@@ -98,6 +98,7 @@ void SymStateSpaceManager::cost_image(
 }
 
 BDD SymStateSpaceManager::filter_mutex(BDD bdd, bool fw, int node_limit, bool initialization) {
+    return bdd;
     BDD res = bdd;
     const vector<BDD> &notDeadEndBDDs = fw ? sym_mutexes.notDeadEndFw : sym_mutexes.notDeadEndBw;
     for (const BDD &notDeadEnd : notDeadEndBDDs) {

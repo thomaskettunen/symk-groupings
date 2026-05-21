@@ -29,7 +29,11 @@ void TopkSymbolicUniformCostSearch::initialize() {
     solution_registry->init(
         vars,
         fw_search ? fw_search->getClosedShared() : nullptr,
+        fw_search ? fw_search->open_list : nullptr,
+        fw_search ? fw_search->frontier : nullptr,
         bw_search ? bw_search->getClosedShared() : nullptr,
+        bw_search ? bw_search->open_list : nullptr,
+        bw_search ? bw_search->frontier : nullptr,
         sym_trs,
         plan_data_base
     );
@@ -95,7 +99,7 @@ public:
 
     virtual shared_ptr<TopkSymbolicUniformCostSearch> create_component(
         const plugins::Options &options) const override {
-        utils::g_log << "Search Algorithm: Topk Symbolic Bidirectional Uniform Cost Search" << endl;
+        utils::g_log << "Search Algorithm: Topk Symbolic Bidirectional Uniform Cost Search" << (options.get<bool>("alternating") ? " (alternating)" : "") << endl;
         return make_shared<TopkSymbolicUniformCostSearch>(options, true, true, options.get<bool>("alternating"));
     }
 };

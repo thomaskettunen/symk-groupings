@@ -32,6 +32,8 @@ namespace symbolic {
             static const Cost MIN;
             static const Cost MAX;
 
+            bool is_valid();
+
             Cost &operator+=(const Cost &other);
             Cost &operator-=(const Cost &other);
             Cost operator+(const Cost other) const;

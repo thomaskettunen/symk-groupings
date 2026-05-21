@@ -16,66 +16,32 @@
 #include "../cost.h"
 
 namespace symbolic {
-/*
- * This class allows to perform a BDD search.  It is designed to
- * mantain the current state in the search.  We consider four
- * different points at which we may truncate the search:
- * pop(), filter_mutex(), expand_zero(), expand_cost()
- * We mantain 3 BDDs to know the current state: Stmp, S and Szero.
- * Briefly:
- * 1) if Sfilter, Szero and S are empty => pop() => Szero.
- * 2) else if Stfilter => filter_mutex() => Szero
- * 3) else if Szero => expand_zero => S (passing by Sfilter)
- * 4) else (S must have something) => expand_cost()
- *
- * Zero cost operators have been expanded iff !S.IsZero() && Szero.IsZero()
- */
-class SymController;
 class ClosedList;
 
 class UniformCostSearch : public SymSearch {
 public:
     // Current state of the search:
+    bool fw; // Direction of the search. true=forward, false=backward
     std::shared_ptr<ClosedList> closed; // Closed list is a shared ptr to share
     std::shared_ptr<OpenList> open_list;
-    Frontier frontier;
+    std::shared_ptr<Frontier> frontier;
 protected:
-    bool fw; // Direction of the search. true=forward, false=backward
 
-    Estimation step_estimation;
-
-
-    // Opposite direction. Mostly relevant when bidirectional search ist used
+    // Opposite direction. Mostly relevant when bidirectional search is used
     std::shared_ptr<ClosedList> perfectHeuristic;
     std::shared_ptr<OpenList> oppositeOpenList; 
 
-    bool lastStepCost; // If the last step was a cost step (to know if we are in
-                       // estimationDisjCost or Zero)
+    bool lastStepCost; // If the last step was a cost step (to know if we are in estimationDisjCost or Zero)
 
     Cost last_g_cost;
 
-    void violated(
-        TruncatedReason reason, double time, int maxTime, int maxNodes);
+    virtual void checkFrontierCut();
 
-    bool initialization() const {
-        return frontier.g() == Cost::MIN && lastStepCost;
-    }
-
-    /*
-     * Check if we can proof that no more plans exist
-     */
-    virtual bool provable_no_more_plans();
-
-    /*
-     * Check generated or closed states with other frontiers => solution check
-     */
-    virtual void checkFrontierCut(Bucket &bucket, Cost g);
-
-    void closeStates(Bucket &bucket, Cost g);
-
-    bool prepareBucket();
+    void advanceFrontier();
 
     virtual void filterFrontier();
+
+    void expandFrontier(int maxTime, int maxNodes);
 
     //////////////////////////////////////////////////////////////////////////////
 public:
@@ -87,7 +53,7 @@ public:
     virtual ~UniformCostSearch() = default;
 
     virtual bool finished() const override {
-        return open_list->empty() && frontier.empty();
+        return open_list->empty() && frontier->empty();
     }
 
     void step() override {
@@ -109,11 +75,11 @@ public:
         UniformCostSearch *opposite_search); // Init forward or backward search
 
     virtual Cost getF() const override {
-        return open_list->minNextG(frontier, mgr->get_min_transition_cost());
+        return open_list->minNextG(*frontier, mgr->get_min_transition_cost());
     }
 
     virtual Cost getG() const {
-        return frontier.empty() ? open_list->minG() : frontier.g();
+        return frontier->empty() ? open_list->minG() : frontier->g();
     }
 
     std::shared_ptr<ClosedList> getClosedShared() const {
@@ -127,14 +93,10 @@ public:
     BDD getExpanded() const;
     void getNotExpanded(Bucket &res) const;
 
-    Estimation *get_step_estimator() {
-        return &step_estimation;
-    }
-
     // void write(const std::string & file) const;
 
     void filter_mutex(Bucket &bucket) {
-        mgr->filter_mutex(bucket, fw, initialization());
+        mgr->filter_mutex(bucket, fw, false);
     }
 };
 }

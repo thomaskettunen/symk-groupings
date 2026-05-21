@@ -42,6 +42,8 @@ const Cost Cost::INVALID = Cost(CostMagicFlags::INVALID);
 const Cost Cost::MIN = Cost(std::unordered_map<grouping::GroupID, int>(), 0);
 const Cost Cost::MAX = Cost(CostMagicFlags::MAX);
 
+bool Cost::is_valid() { return this->magic != CostMagicFlags::INVALID; }
+
 Cost &Cost::operator+=(const Cost &other) {
     if (other.magic == CostMagicFlags::INVALID || this->magic == CostMagicFlags::INVALID) { throw std::runtime_error("Addition with Cost(INVALID)"); }
     for (const auto& [group, amount] : other.value) {

@@ -7,25 +7,6 @@
 #include "../utils/logging.h"
 
 namespace symbolic {
-Frontier::Frontier() : mgr(nullptr), g_value(Cost::MIN) { }
-
-void Frontier::init(SymStateSpaceManager *mgr_, const BDD &bdd) {
-    mgr = mgr_;
-    Sfilter.push_back(bdd);
-    g_value = Cost::MIN;
-}
-
-void Frontier::set(Cost g, Bucket &bdd) {
-    assert(empty());
-    g_value = g;
-    Sfilter.swap(bdd);
-}
-
-void Frontier::clear(){ // clears only Sfilter
-    assert(Smerge.empty() && Szero.empty() && S.empty());
-    Bucket().swap(Sfilter);
-}
-
 /// @brief Filters dominated states from the closed-list out of the frontier.
 ///
 ///        I.e. if the frontier has cost (1 2 3) and contains state s1, which is found in the closed-list with any cost dominating (1 2 3), e.g. cost (1 1 1), s1 will be removed from the frontier.
@@ -34,11 +15,10 @@ void Frontier::filter(const std::shared_ptr<ClosedList> closed) {
 
     //utils::g_log << "nodes before filtering frontier " << nodes() << std::endl;
 
-    if (Sfilter.empty()) { return; }
-    assert(Smerge.empty() && Szero.empty() && S.empty());
+    if (states.empty()) { return; }
     for (auto &[cost, bdd] : closed->getClosedList()) {
         if (cost.dominates(this->g())) {
-            for (BDD &b : Sfilter) {
+            for (BDD &b : states) {
                 b -= bdd;
             }
         }
@@ -47,119 +27,57 @@ void Frontier::filter(const std::shared_ptr<ClosedList> closed) {
     //utils::g_log << "nodes after filtering frontier " << nodes() << std::endl;
 }
 
-bool Frontier::nextStepZero() const { return !Szero.empty() || (S.empty() && mgr->has_zero_cost_transition()); }
+ExpansionResult Frontier::expand_zero(int maxTime, int maxNodes, bool fw) {
+    assert(false); // TODO: P10: Ignore zero const actions for now
+    // // Image with respect to 0-cost actions
+    // utils::Timer image_time;
 
-Result Frontier::prepare(int maxTime, int maxNodes, bool fw, bool initialization) {
-    utils::Timer filterTime;
-    if (!Sfilter.empty()) {
-        int numFiltered = mgr->filterMutexBucket(Sfilter, fw, initialization, maxTime, maxNodes);
-        if (numFiltered > 0) {
-            Smerge.insert(Smerge.end(), Sfilter.begin(), Sfilter.begin() + numFiltered);
-        }
-        if (numFiltered == (int)(Sfilter.size())) {
-            Bucket().swap(Sfilter);
-        } else {
-            Sfilter.erase(Sfilter.begin(), Sfilter.begin() + numFiltered);
-            return Result(TruncatedReason::FILTER_MUTEX, filterTime());
-        }
-    }
+    // mgr->set_time_limit(maxTime);
+    // // Compute image, storing the result on Simg
+    // try {
+    //     for (size_t i = 0; i < Szero.size(); i++) {
+    //         Simg.push_back(std::map<Cost, Bucket>());
+    //         mgr->zero_image(fw, Szero[i], Simg[i][Cost::MIN], maxNodes);
+    //     }
+    //     mgr->unset_time_limit();
+    // } catch (const BDDError &e) {
+    //     mgr->unset_time_limit();
+    //     return ExpansionResult(true, TruncatedReason::IMAGE_ZERO, image_time());
+    // }
 
-    if (!Smerge.empty()) {
-        if (Smerge.size() > 1) {
-            mgr->merge_bucket(Smerge, 60000, 10000000);
-        }
+    // Bucket().swap(Szero); // Delete Szero because it has been expanded
 
-        if (mgr->has_zero_cost_transition()) {
-            S.insert(S.end(), Smerge.begin(), Smerge.end());
-            assert(Szero.empty());
-            Szero.swap(Smerge);
-        } else {
-            S.swap(Smerge);
-        }
-    }
-
-    // If there are zero cost operators, merge S
-    if (mgr->has_zero_cost_transition() && Szero.empty()) {
-        if (S.size() > 1) {
-            mgr->merge_bucket(S, 60000, 10000000);
-        }
-    }
-
-    return Result(filterTime());
+    // return ExpansionResult(true, Simg, image_time());
 }
 
-bool Frontier::bucketReady() const { return !(Szero.empty() && S.empty() && Sfilter.empty() && Smerge.empty()); }
-bool Frontier::expansionReady() const { return Sfilter.empty() && Smerge.empty() && !(Szero.empty() && S.empty()); }
-bool Frontier::empty() const {return Szero.empty() && S.empty() && Sfilter.empty() && Smerge.empty(); }
-
-int Frontier::nodes() const {
-    if (!Szero.empty()) {
-        return nodeCount(Szero);
-    } else if (!S.empty()) {
-        return nodeCount(S);
-    } else {
-        return nodeCount(Sfilter) + nodeCount(Smerge);
-    }
-}
-
-int Frontier::buckets() const {
-    if (!Szero.empty()) {
-        return Szero.size();
-    } else if (!S.empty()) {
-        return S.size();
-    } else {
-        return Sfilter.size() + Smerge.size();
-    }
-}
-
-ResultExpansion Frontier::expand_zero(int maxTime, int maxNodes, bool fw) {
-    // Image with respect to 0-cost actions
-    utils::Timer image_time;
-
-    mgr->set_time_limit(maxTime);
-    // Compute image, storing the result on Simg
-    try {
-        for (size_t i = 0; i < Szero.size(); i++) {
-            Simg.push_back(std::map<Cost, Bucket>());
-            mgr->zero_image(fw, Szero[i], Simg[i][Cost::MIN], maxNodes);
-        }
-        mgr->unset_time_limit();
-    } catch (const BDDError &e) {
-        mgr->unset_time_limit();
-        return ResultExpansion(true, TruncatedReason::IMAGE_ZERO, image_time());
-    }
-
-    Bucket().swap(Szero); // Delete Szero because it has been expanded
-
-    return ResultExpansion(true, Simg, image_time());
-}
-
-ResultExpansion Frontier::expand_cost(int maxTime, int maxNodes, bool fw) {
+ExpansionResult Frontier::expand_cost(int maxTime, int maxNodes, bool fw) {
+    std::vector<std::map<Cost, Bucket>> result;
     utils::Timer image_time;
     mgr->set_time_limit(maxTime);
     // cout << maxTime << " + " << maxNodes << endl;
     try {
-        for (size_t i = 0; i < S.size(); i++) {
-            Simg.push_back(std::map<Cost, Bucket>());
-            mgr->cost_image(fw, S[i], Simg[i], maxNodes);
+        for (size_t i = 0; i < states.size(); i++) {
+            result.push_back(std::map<Cost, Bucket>());
+            mgr->cost_image(fw, states[i], result[i], maxNodes);
         }
         mgr->unset_time_limit();
     } catch (const BDDError &e) {
         // Update estimation
         mgr->unset_time_limit();
 
-        return ResultExpansion(false, TruncatedReason::IMAGE_COST, image_time());
+        return ExpansionResult(false, TruncatedReason::IMAGE_COST, image_time());
     }
 
-    Bucket().swap(S); // Delete S because it has been expanded
-    return ResultExpansion(false, Simg, image_time());
+    Bucket().swap(states);
+    return ExpansionResult(false, result, image_time());
 }
 
 std::ostream &operator<<(std::ostream &os, const Frontier &frontier) {
-    if (!frontier.Sfilter.empty()) os << "Sf: " << nodeCount(frontier.Sfilter) << " ";
-    if (!frontier.Smerge.empty()) os << "Sm: " << nodeCount(frontier.Smerge) << " ";
-    if (!frontier.Szero.empty()) os << "Sz: " << nodeCount(frontier.Szero) << " ";
-    if (!frontier.S.empty()) os << "S: " << nodeCount(frontier.S) << " ";
+    if (!frontier.empty()) {
+        os << "Frontier " << frontier.g() << " : nodes:" << !frontier.nodes();
+    } else {
+        os << "Frontier : empty;";
+    }
     return os;
 }
 }

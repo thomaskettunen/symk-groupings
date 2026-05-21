@@ -28,12 +28,13 @@ private:
     std::map<Cost, std::vector<BDD>> zeroCostClosed;
     BDD closedTotal; // All closed states.
 
+    bool silent = false;
 public:
-    ClosedList();
+    ClosedList(bool silent) : mgr(nullptr), silent(silent) {};
     void init(SymStateSpaceManager *manager);
     void init(SymStateSpaceManager *manager, const ClosedList &other);
 
-    void insert(Cost h, BDD S);
+    void insert(Cost h, BDD S, bool fw);
 
     SymSolutionCut getCheapestCut(BDD states, Cost g, bool fw) const;
 
