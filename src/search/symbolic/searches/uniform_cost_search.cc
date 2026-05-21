@@ -48,6 +48,7 @@ bool UniformCostSearch::init(
 
     if (opposite_search) {
         perfectHeuristic = opposite_search->getClosedShared();
+        oppositeFrontier = opposite_search->frontier;
         oppositeOpenList = opposite_search->open_list;
     } else {
         perfectHeuristic = make_shared<ClosedList>(engine->is_silent());
@@ -83,22 +84,25 @@ void UniformCostSearch::advanceFrontier() {
     while (frontier->empty()) {
         if(open_list->empty()) { // NOTE: P10: hacky solution to stop when frontier is empty do not forge
             engine->search_done = true;
+            frontier->set(Cost::MAX, frontier->bucket());
+            frontier->last_g = Cost::MAX;
             utils::g_log << "Completed search, open list empty" << std::endl;
             return;
         }
         open_list->pop(*frontier);
-        last_g_cost = frontier->g();
         if (oppositeOpenList) {
-            bool dominated = !oppositeOpenList->open.empty();
-            for (auto &[cost, bucket] : oppositeOpenList->open) {
-                if (!pareto_front::dominates(last_g_cost + cost)) {
-                    dominated = false;
-                    break;
+            if(pareto_front::dominates(frontier->g() + oppositeFrontier->g())) {
+                bool dominated = !oppositeOpenList->open.empty();
+                for (auto &[cost, bucket] : oppositeOpenList->open) {
+                    if (!pareto_front::dominates(frontier->g() + cost)) {
+                        dominated = false;
+                        break;
+                    }
                 }
-            }
-            if (dominated){
-                frontier->clear();
-                continue;
+                if (dominated) {
+                    frontier->clear();
+                    continue;
+                }
             }
         }
         filterFrontier();
