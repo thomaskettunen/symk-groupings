@@ -46,6 +46,7 @@ bool Cost::is_valid() { return this->magic != CostMagicFlags::INVALID; }
 
 Cost &Cost::operator+=(const Cost &other) {
     if (other.magic == CostMagicFlags::INVALID || this->magic == CostMagicFlags::INVALID) { throw std::runtime_error("Addition with Cost(INVALID)"); }
+    if (other.magic == CostMagicFlags::MAX || this->magic == CostMagicFlags::MAX) { this->magic = CostMagicFlags::MAX; return *this; }
     for (const auto& [group, amount] : other.value) {
         this->value[group] = map_get_or(this->value, group, 0) + amount;
     }
@@ -249,7 +250,7 @@ bool Cost::operator!=(const Cost &other) const {
 bool Cost::dominates(const Cost &other) const {
     switch (this->magic)
     {
-        case CostMagicFlags::MAX: return true;
+        case CostMagicFlags::MAX: return false;
         case CostMagicFlags::NORMAL: break;
         default: throw std::runtime_error("P10: Unsure how to handle <= for cost with lhs->magic:" + magic_to_string(this->magic));
     }

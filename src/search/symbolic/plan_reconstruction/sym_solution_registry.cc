@@ -243,28 +243,28 @@ void SymSolutionRegistry::construct_cheaper_solutions() {
 
         // NOTE: P10: Check if it's still possible to create find a better plan
         if (fw_frontier && bw_frontier) {
+            if (!silent) utils::g_log << "\t not checking domination of: " << fw_frontier->last_g << " + " << bw_frontier->last_g << " = " <<  (fw_frontier->last_g + bw_frontier->last_g) << " against " << cost << std::endl;
             if ((fw_frontier->last_g + bw_frontier->last_g).dominates(cost)) goto skip;
-            if (!silent) utils::g_log << "\t" << fw_frontier->last_g << " + " << bw_frontier->last_g << " = " <<  (fw_frontier->last_g + bw_frontier->last_g) << " does not dominate " << cost << std::endl;
+            if (!silent) utils::g_log << "\t checking domination of: " << fw_frontier->last_g << " + " << bw_frontier->g() << " = " <<  (fw_frontier->last_g + bw_frontier->g()) << " against " << cost << std::endl;
             if ((fw_frontier->last_g + bw_frontier->g()).dominates(cost)) goto skip;
-            if (!silent) utils::g_log << "\t" << fw_frontier->last_g << " + " << bw_frontier->g() << " = " <<  (fw_frontier->last_g + bw_frontier->g()) << " does not dominate " << cost << std::endl;
+            if (!silent) utils::g_log << "\t checking domination of: " << fw_frontier->g() << " + " << bw_frontier->last_g << " = " <<  (fw_frontier->g() + bw_frontier->last_g) << " against " << cost << std::endl;
             if ((fw_frontier->g() + bw_frontier->last_g).dominates(cost)) goto skip;
-            if (!silent) utils::g_log << "\t" << fw_frontier->g() << " + " << bw_frontier->last_g << " = " <<  (fw_frontier->g() + bw_frontier->last_g) << " does not dominate " << cost << std::endl;
+            if (!silent) utils::g_log << "\t checking domination of: " << fw_frontier->g() << " + " << bw_frontier->g() << " = " <<  (fw_frontier->g() + bw_frontier->g()) << " against " << cost << std::endl;
             if ((fw_frontier->g() + bw_frontier->g()).dominates(cost)) goto skip;
-            if (!silent) utils::g_log << "\t" << fw_frontier->g() << " + " << bw_frontier->g() << " = " <<  (fw_frontier->g() + bw_frontier->g()) << " does not dominate " << cost << std::endl;
             for (auto &[bw_cost, _] : bw_open->open) {
+                if (!silent) utils::g_log << "\t checking domination of: " << fw_frontier->last_g << " + " << bw_cost << " = " << (fw_frontier->last_g + bw_cost) << " against " << cost << std::endl;
                 if ((fw_frontier->last_g + bw_cost).dominates(cost)) goto skip;
-                if (!silent) utils::g_log << "\t" << fw_frontier->last_g << " + " << bw_cost << " = " << (fw_frontier->last_g + bw_cost) << " does not dominate " << cost << std::endl;
+                if (!silent) utils::g_log << "\t checking domination of: " << fw_frontier->g() << " + " << bw_cost << " = " << (fw_frontier->g() + bw_cost) << " against " << cost << std::endl;
                 if ((fw_frontier->g() + bw_cost).dominates(cost)) goto skip;
-                if (!silent) utils::g_log << "\t" << fw_frontier->g() << " + " << bw_cost << " = " << (fw_frontier->g() + bw_cost) << " does not dominate " << cost << std::endl;
             }
             for (auto &[fw_cost, _] : fw_open->open) {
+                if (!silent) utils::g_log << "\t checking domination of: " << fw_cost << " + " << bw_frontier->last_g << " = " << (fw_cost + bw_frontier->last_g) << " against " << cost << std::endl;
                 if ((fw_cost + bw_frontier->last_g).dominates(cost)) goto skip;
-                if (!silent) utils::g_log << "\t" << fw_cost << " + " << bw_frontier->last_g << " = " << (fw_cost + bw_frontier->last_g) << " does not dominate " << cost << std::endl;
+                if (!silent) utils::g_log << "\t checking domination of: " << fw_cost << " + " << bw_frontier->g() << " = " << (fw_cost + bw_frontier->g()) << " against " << cost << std::endl;
                 if ((fw_cost + bw_frontier->g()).dominates(cost)) goto skip;
-                if (!silent) utils::g_log << "\t" << fw_cost << " + " << bw_frontier->g() << " = " << (fw_cost + bw_frontier->g()) << " does not dominate " << cost << std::endl;
                 for (auto &[bw_cost, _] : bw_open->open) {
+                    if (!silent) utils::g_log << "\t checking domination of: " << fw_cost << " + " << bw_cost << " = " << (fw_cost + bw_cost) << " against " << cost << std::endl;
                     if ((fw_cost + bw_cost).dominates(cost)) goto skip;
-                    if (!silent) utils::g_log << "\t" << fw_cost << " + " << bw_cost << " = " << (fw_cost + bw_cost) << " does not dominate " << cost << std::endl;
                 }
             } 
         }
