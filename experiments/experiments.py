@@ -108,10 +108,10 @@ from parser import FIParser
 exp.add_parser(FIParser())
 
 searches = {
-    "symk_fw-B": lambda g, k: f"symk_fw(silent=true,k={k},grouping={g},max_time={TIME_LIMIT})",
-    "symk_bw-B": lambda g, k: f"symk_bw(silent=true,k={k},grouping={g},max_time={TIME_LIMIT})",
-    "symk_bd-B": lambda g, k: f"symk_bd(silent=true,k={k},grouping={g},max_time={TIME_LIMIT})",
-    "symk_bd-B-alternating": lambda g, k: f"symk_bd(alternating=true,silent=true,k={k},grouping={g},max_time={TIME_LIMIT})",
+    # "symk_fw-D": lambda g, k: f"symk_fw(silent=true,k={k},grouping={g},max_time={TIME_LIMIT})",
+    # "symk_bw-D": lambda g, k: f"symk_bw(silent=true,k={k},grouping={g},max_time={TIME_LIMIT})",
+    "symk_bd-D": lambda g, k: f"symk_bd(silent=true,k={k},grouping={g},max_time={TIME_LIMIT})",
+    # "symk_bd-D-alternating": lambda g, k: f"symk_bd(alternating=true,silent=true,k={k},grouping={g},max_time={TIME_LIMIT})",
 }
 
 for task in suites.build_suite(os.environ['DOWNWARD_BENCHMARKS'], SUITE):
