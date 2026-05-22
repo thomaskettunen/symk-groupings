@@ -24,6 +24,7 @@ namespace symbolic {
 UniformCostSearch::UniformCostSearch(SymbolicSearch *eng, const SymParameters &params)
     : SymSearch(eng, params),
       fw(true),
+      step_estimation(0, 0, false),
       closed(make_shared<ClosedList>(engine->is_silent())),
       open_list(make_shared<OpenList>(engine->is_silent())),
       frontier(make_shared<Frontier>(engine->is_silent())),

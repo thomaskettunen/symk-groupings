@@ -27,6 +27,8 @@ public:
     std::shared_ptr<Frontier> frontier;
 protected:
 
+    Estimation step_estimation;
+
     // Opposite direction. Mostly relevant when bidirectional search is used
     std::shared_ptr<ClosedList> perfectHeuristic;
     std::shared_ptr<OpenList> oppositeOpenList; 
@@ -88,6 +90,10 @@ public:
     }
 
     void filterDuplicates(Bucket &bucket);
+
+    Estimation *get_step_estimator() {
+        return &step_estimation;
+    }
 
     // Returns the nodes that have been expanded by the algorithm (closed
     // without the current frontier)
