@@ -86,7 +86,6 @@ def main():
 
   print(" - generating filter")
   run_filter = [
-    {"domain": "airport", "problem": "p35-airport4halfMUC-p12.pddl", "grouping": "prefix(1)"}, # One time preprocess gave up, so different #Groups
     *[{"domain": domain, "problem": problem, "grouping": grouping} for domain, problem, grouping in set([(run["domain"], run["problem"], run["grouping"]) for run in tqdm(unfiltered_runs) if (
       run.has({"error": 1})
       or run.has({"exit_code": ["ExitCode.OTHER_ERROR", "ExitCode.PREPROCESS_ERR", "ExitCode.OUT_OF_SPACE", "ExitCode.TRANSLATE_OUT_OF_MEM"]})
@@ -343,7 +342,7 @@ def main():
 
     ### latex
     with open(f"{ensure_dir(f'{plot_dir}/tables/summary')}/{grouping}.tex", "w", encoding="utf-8") as f:
-      f.write(latex_table([[grouping, *searches]] + [[row] + [int(columns[search].get(row, 0)) for row in rows] for search in searches]))
+      f.write(latex_table([[grouping, *searches]] + [[row] + [int(columns[search].get(row, 0)) for search in searches] for row in rows]))
 
   print("Done")
 
