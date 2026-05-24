@@ -284,6 +284,34 @@ def main():
   plt.savefig(f"{ensure_dir(f'{plot_dir}')}/coverage_over_num_groups.png", dpi=300, bbox_inches="tight")
   plt.close()
 
+  ## #Problems / #Groups
+  print(" - #Problems / #Groups")
+  n_bars = len(groupings)
+  width = 0.8 / n_bars
+  i = 0
+  for i, grouping  in tqdm(enumerate(groupings)):
+    group_counts = {}
+    for group_count in tqdm([int(run["#Groups"]) for (s, g) in runs if g == grouping for run in runs[(s, g)]], leave=False):
+      group_counts[group_count] = group_counts.get(group_count, 0) + 1
+
+    x = sorted([group_count for group_count in group_counts if group_count <= 50])
+    y = [group_counts[group_count] for group_count in x]
+    plt.bar(
+      [xi - ((i - (n_bars - 1) / 2) * width) for xi in x],
+      y,
+      width = width,
+      label = f"{grouping}",
+    )
+
+  plt.xlabel("#Groups")
+  plt.ylabel("#Problems")
+  plt.title(f"#Problems / #Groups")
+  plt.grid(True)
+  plt.legend()
+
+  plt.savefig(f"{ensure_dir(f'{plot_dir}')}/num_problems_over_num_groups.png", dpi=300, bbox_inches="tight")
+  plt.close()
+
   ## exit code table
   print(" - exit code table")
   for grouping in tqdm(groupings):
