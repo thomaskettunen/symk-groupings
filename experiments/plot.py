@@ -256,18 +256,19 @@ def main():
       plt.savefig(f"{ensure_dir(f'{plot_dir}/total_time_vs/{grouping}')}/{sa}_vs_{sb}.png", dpi=300, bbox_inches="tight")
       plt.close()
 
-  ## coverage / #Groups
-  print(" - coverage / #Groups")
+  ## %coverage / #Groups
+  print(" - %coverage / #Groups")
   n_bars = len(searches)
   width = 0.8 / n_bars
   i = 0
   for i, search  in tqdm(enumerate(searches)):
     group_counts = {}
-    for group_count in tqdm([int(run["#Groups"]) for (s, g) in runs if s == search for run in runs[(s, g)] if run.has({"coverage": 1})], leave=False):
-      group_counts[group_count] = group_counts.get(group_count, 0) + 1
+    for group_count, coverage in tqdm([(int(run["#Groups"]), int(run["coverage"])) for (s, g) in runs if s == search for run in runs[(s, g)]], leave=False):
+      positive, total = group_counts.get(group_count, (0, 0))
+      group_counts[group_count] = (positive + coverage, total + 1) 
 
     x = sorted([group_count for group_count in group_counts if group_count <= 50])
-    y = [group_counts[group_count] for group_count in x]
+    y = [group_counts[group_count][0] / group_counts[group_count][1] for group_count in x]
     plt.bar(
       [xi - ((i - (n_bars - 1) / 2) * width) for xi in x],
       y,
@@ -276,8 +277,8 @@ def main():
     )
 
   plt.xlabel("#Groups")
-  plt.ylabel("Coverage")
-  plt.title(f"Coverage over #Groups")
+  plt.ylabel("Coverage%")
+  plt.title(f"Coverage% over #Groups")
   plt.grid(True)
   plt.legend()
 
