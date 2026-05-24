@@ -344,6 +344,43 @@ def main():
     with open(f"{ensure_dir(f'{plot_dir}/tables/summary')}/{grouping}.tex", "w", encoding="utf-8") as f:
       f.write(latex_table([[grouping, *searches]] + [[row] + [int(columns[search].get(row, 0)) for search in searches] for row in rows]))
 
+  ## coverage / domain table
+  print(" - coverage / domain table")
+  ks = [1, 5, 10000]
+  domains = {}
+  for domain, problem, grouping in tqdm(runs_T):
+    domains[domain] = domains.get(domain, {grouping: (set(), {s: {k: 0 for k in ks} for s in searches}) for grouping in groupings})
+    problems, coverage = domains[domain][grouping]
+    problems.add(problem)
+    for search in searches:
+      if run := runs_T[(domain, problem, grouping)][search]:
+        for k in ks:
+          if run["exit_code"] == "ExitCode.FOUND_ALL" or run["plans_found"] >= k:
+            coverage[search][k] += 1
+
+  for grouping in groupings:
+    header = ["Domain (problems)", *searches]
+    rows = []
+    for domain in domains:
+      problems, coverage = domains[domain][grouping]
+      rows += [[f"{domain} ({len(problems)})"] + ["/".join([f"{coverage[search][k]}" for k in ks]) for search in searches]]
+
+    w0 = max(len(header[0]), *[len(row[0]) for row in rows])
+    w_rest = max([len(h) for h in header[1:]] + [len(cell) for r in rows for cell in r[1:]])
+    print(f"{grouping:>{w0}}", end=" | ")
+    for h in header[1:]:
+      print(f"{h:^{w_rest}}", end=" | ")
+    print("")
+    for r in rows:
+      print(f"{r[0]:>{w0}}", end=" | ")
+      for cell in r[1:]:
+        print(f"{cell:^{w_rest}}", end=" | ")
+      print("")
+
+    ### latex
+    with open(f"{ensure_dir(f'{plot_dir}/tables/coverage_domain')}/{grouping}.tex", "w", encoding="utf-8") as f:
+      f.write(latex_table([header] + rows))
+
   print("Done")
 
 if __name__ := "__main__":
