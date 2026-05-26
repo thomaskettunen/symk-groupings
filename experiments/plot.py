@@ -118,10 +118,9 @@ def main():
   print(" - add #Groups to forbiditer data from symk data")
   for (domain, problem, grouping) in tqdm(runs_T):
     groups_counts = [runs_T[(domain, problem, grouping)][search]["#Groups"] for search in searches if runs_T[(domain, problem, grouping)][search]["#Groups"] is not None]
-    num_groups = 133769420
     match len(set(groups_counts)):
       case 1: num_groups = groups_counts[0]
-      case 0: print(f"{domain}:{problem} ({grouping}) has no #Groups"); num_groups = 133769420
+      case 0: print(f"{domain}:{problem} ({grouping}) has no #Groups"); num_groups = -1
       case 2 if 0 in groups_counts: print(f"{domain}:{problem} ({grouping}) has a zero #Groups"); num_groups = [g for g in groups_counts if g != 0][0] #. Case where one search didn't reach the #Groups print, not necessarily a disagreement
       case x: raise RuntimeError(f"Expected exactly group count for problem {domain}:{problem} ({grouping}), found: {x}, {groups_counts}")
     for search in runs_T[(domain, problem, grouping)]:
@@ -258,25 +257,44 @@ def main():
       plt.savefig(f"{ensure_dir(f'{plot_dir}/total_time_vs/{grouping}')}/{sa}_vs_{sb}.png", dpi=300, bbox_inches="tight")
       plt.close()
 
+
+  num_groups_buckets_base = 2
   ## %coverage / #Groups
   print(" - %coverage / #Groups")
   n_bars = len(searches)
   width = 0.8 / n_bars
-  i = 0
+  base = num_groups_buckets_base
   for i, search  in tqdm(enumerate(searches)):
     group_counts = {}
     for group_count, coverage in tqdm([(int(run["#Groups"]), int(run["coverage"])) for (s, g) in runs if s == search for run in runs[(s, g)]], leave=False):
       positive, total = group_counts.get(group_count, (0, 0))
-      group_counts[group_count] = (positive + coverage, total + 1) 
+      group_counts[group_count] = (positive + coverage, total + 1)
 
-    x = sorted([group_count for group_count in group_counts if group_count <= 50])
-    y = [group_counts[group_count][0] / group_counts[group_count][1] for group_count in x]
-    plt.bar(
-      [xi - ((i - (n_bars - 1) / 2) * width) for xi in x],
+    x = sorted([group_count for group_count in group_counts])
+    has_none_groups = x[0] < 0
+    buckets = ([-1] if has_none_groups else []) + [base**i for i in range(0, math.ceil(math.log(x[-1], base)) + 1)]
+    xi = 0
+    y = [0 for b in buckets]
+    lower = -2
+    for j, upper in enumerate(buckets):
+      total = 0
+      while xi < len(x) and lower < x[xi] <= upper:
+        c, t = group_counts[x[xi]]
+        total += t
+        y[j] += c
+        xi += 1
+      assert(y[j] <= total)
+      if total: y[j] *= (100 / total)
+      lower = upper
+
+    bars = plt.bar(
+      [xi - ((i - (n_bars - 1) / 2) * width) for xi in range(len(buckets))],
       y,
       width = width,
       label = f"{search}",
     )
+
+    plt.xticks(range(len(buckets)), (["None"] if has_none_groups else []) + [rf"]${{{base}}}^{{{e-1}}};{{{base}}}^{{{e}}}$]" for e in range(0, math.ceil(math.log(x[-1], base)) + 1)], rotation=45, ha="right")
 
   plt.xlabel("#Groups")
   plt.ylabel("Coverage%")
@@ -291,20 +309,36 @@ def main():
   print(" - #Problems / #Groups")
   n_bars = len(groupings)
   width = 0.8 / n_bars
+  base = num_groups_buckets_base
   i = 0
   for i, grouping  in tqdm(enumerate(groupings)):
     group_counts = {}
     for group_count in tqdm([int(run["#Groups"]) for (s, g) in runs if g == grouping for run in runs[(s, g)]], leave=False):
       group_counts[group_count] = group_counts.get(group_count, 0) + 1
 
-    x = sorted([group_count for group_count in group_counts if group_count <= 50])
-    y = [group_counts[group_count] for group_count in x]
-    plt.bar(
-      [xi - ((i - (n_bars - 1) / 2) * width) for xi in x],
+    x = sorted([group_count for group_count in group_counts])
+    has_none_groups = x[0] < 0
+    buckets = ([-1] if has_none_groups else []) + [base**i for i in range(0, math.ceil(math.log(x[-1], base)) + 1)]
+    xi = 0
+    y = [0 for b in buckets]
+    lower = -2
+    for j, upper in enumerate(buckets):
+      while xi < len(x) and lower < x[xi] <= upper:
+        y[j] += group_counts[x[xi]]
+        xi += 1
+      assert(y[j] % len(searches) == 0)
+      y[j] /= len(searches) # We count 1 for each search (assumes same {domain, problems} for each {search, grouping})
+      lower = upper
+
+    bars = plt.bar(
+      [xi - ((i - (n_bars - 1) / 2) * width) for xi in range(len(buckets))],
       y,
       width = width,
       label = f"{grouping}",
     )
+
+    plt.xticks(range(len(buckets)), (["None"] if has_none_groups else []) + [rf"]${{{base}}}^{{{e-1}}};{{{base}}}^{{{e}}}$]" for e in range(0, math.ceil(math.log(x[-1], base)) + 1)], rotation=45, ha="right")
+
 
   plt.xlabel("#Groups")
   plt.ylabel("#Problems")
