@@ -160,6 +160,7 @@ def main():
 
   ## progressive k
   print(" - progressive k")
+  base = 10
   ks = list(range(1, int(next(iter(runs.values()))[0]["k"]))) #. Assumes all data has same k (or at least that the first one has max k)
   with tqdm(total=len(runs)) as pbar:
     for grouping in groupings:
@@ -175,8 +176,8 @@ def main():
 
       plt.xscale("log")
       plt.xticks(
-        [10**e for e in range(0, int(math.ceil(math.log10(ks[-1]))) + 1)],
-        [rf"$10^{{{e}}}$" for e in range(0, int(math.ceil(math.log10(ks[-1]))) + 1)],
+        [base**e for e in range(0, int(math.ceil(math.log(ks[-1], base))) + 1)],
+        [rf"${{{base}}}^{{{e}}}$" for e in range(0, int(math.ceil(math.log(ks[-1], base))) + 1)],
       )
       plt.xlabel("K")
       plt.ylabel("Coverage")
@@ -232,7 +233,8 @@ def main():
   print(" - total time scatter")
   step = 1000 #. grid steps
   max_time = max([run["total_time"] for run in all_runs])
-  limit = 10 ** math.ceil(math.log10(max_time)) # since log scale
+  base = 10
+  limit = base ** math.ceil(math.log(max_time, base)) # since log scale
   for sa, sb in tqdm([(sa, sb) for sa in searches for sb in searches if sa < sb]):
     for grouping in groupings:
       points = []
@@ -245,8 +247,8 @@ def main():
       plt.xlabel(f"Time {sa}")
       plt.ylabel(f"Time {sb}")
 
-      ticks = [1] + [10**e for e in range(1, int(math.log10(limit)))] + [limit]
-      labels = [rf"$10^0$"] + [rf"$10^{{{e}}}$" for e in range(1, int(math.log10(limit)))] + [rf"$\infty$"]
+      ticks = [1] + [base**e for e in range(1, int(math.log(limit, base)))] + [limit]
+      labels = [rf"${{{base}}}^0$"] + [rf"${{{base}}}^{{{e}}}$" for e in range(1, int(math.log(limit, base)))] + [rf"$\infty$"]
 
       plt.xticks(ticks, labels)
       plt.yticks(ticks, labels)
