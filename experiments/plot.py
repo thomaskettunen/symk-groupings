@@ -96,8 +96,14 @@ def main():
   for filtered in run_filter:
     print(f"\t{filtered}")
 
+  def map_run(run):
+    match run["search"]:
+      case x if x.startswith("symk_"): run["search"] = run["search"].replace("symk_", "symk-g ")
+      case "forbiditer": run["search"] = "FI-grouped"
+    return run
+
   print(" - filtering data")
-  all_runs = [run for run in tqdm(unfiltered_runs) if not any([run.has(filtered) for filtered in run_filter])]
+  all_runs = [map_run(run) for run in tqdm(unfiltered_runs) if not any([run.has(filtered) for filtered in run_filter])]
 
   print(" - preprocessing")
   runs = {}
@@ -214,8 +220,8 @@ def main():
         color = colors[(search, next(iter(groupings)))] #. Since we do darkening/lighting locally here
         last_plans, search_done = map(sorted, zip(*[(run["last_plan_time_max"] or 0, run["total_time"] or 0) for run in runs[(search, grouping)] if run.has({"exit_code": "ExitCode.FOUND_ALL"})]))
         counts = range(1, len(last_plans)+1)
-        plt.plot(counts, last_plans, label = f"{search}-Found last plan", color = multiply(color, 1.3))
-        plt.plot(counts, search_done, label = f"{search}-Proved it", color = multiply(color, 0.7))
+        plt.plot(counts, last_plans, label = f"{search} Found last plan", color = multiply(color, 1.3))
+        plt.plot(counts, search_done, label = f"{search} Proved it", color = multiply(color, 0.7))
         plt.fill_between(counts, last_plans, search_done, alpha=0.3, color = color)
         pbar.update(1)
 
